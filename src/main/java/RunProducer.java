@@ -1,8 +1,9 @@
-import dsd.pubsub.protos.DataInfo;
+import dsd.pubsub.protos.MessageInfo;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,23 +30,24 @@ public class RunProducer {
 //        String message = args[1];
 //        byte[] data = message.getBytes(StandardCharsets.UTF_8);
 //        String brokerLocation = args[2];
-        String brokerLocation = "localhost:9092";
+        String brokerLocation = "Jennys-MacBook-Pro.local:1431";
 
         // Open a connection to the Broker by creating a new Producer object
+        // send producer identity to broker
         Producer producer = new Producer(brokerLocation);
-        Broker broker = new Broker(9092);
 
         // for each data record, send topic, key and data
         String data;
         String topic;
         String key;
+        int partition = 1;
+        int offset = 0;
         try{
-            FileInputStream fstream = new FileInputStream("files/access.log");
+            FileInputStream fstream = new FileInputStream("files/access_test.log");
             BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
             String strLine;
             /* read log line by line */
             while ((strLine = br.readLine()) != null)   {
-                /* parse strLine to obtain what you want */
                 if (strLine.contains("GET /image/") || strLine.contains("GET /product/")) {
                     data = strLine;
                     System.out.println(strLine);
@@ -54,18 +56,22 @@ public class RunProducer {
                     m.find();
                     topic = m.group(1);
                     key = m.group(2);
+                  //  offset += data.getBytes(StandardCharsets.UTF_8).length;
+                    offset += 1; // monotonically increasing
                     System.out.println(topic);
                     System.out.println(key);
                     if (key.length() < 10) { // sanity check
                         // build protobuffer
-                        DataInfo.Data record = DataInfo.Data.newBuilder()
+                        MessageInfo.Message record = MessageInfo.Message.newBuilder()
                                 .setTopic(topic)
                                 .setKey(key)
-                                .setData(data).build();
+                                .setValue(data)
+                                .setPartition(partition)
+                                .setOffset(offset)
+                                .build();
                         // producer send record to broker
                         producer.send(record.toByteArray());
                         System.out.println("message has been send!");
-
                     }
                 }
             }
