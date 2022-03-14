@@ -9,28 +9,25 @@ import java.util.regex.Pattern;
 
 public class RunProducer {
     public static void main(String[] args){
-        //usage: brokerLocation
+        //usage: brokerLocation filepath
         //check argument length
-//
-//        if(args.length == 0){
-//            System.out.println("enter topic and message");
-//            return;
-//        }
+        if(args.length == 0){
+            System.out.println("enter topic and message");
+            return;
+        }
+        else if (args.length < 3){
+            System.out.println("missing another argument");
+            return;
+        }
+        else if (args.length > 3){
+            System.out.println("invalid number of arguments");
+            return;
+        }
 
-//        else if (args.length < 3){
-//            System.out.println("missing another argument");
-//            return;
-//        }
-//        else if (args.length > 3){
-//            System.out.println("invalid number of arguments");
-//            return;
-//        }
-        // Set the data and topic
-//        String topic = args[0];
-//        String message = args[1];
-//        byte[] data = message.getBytes(StandardCharsets.UTF_8);
-//        String brokerLocation = args[2];
-        String brokerLocation = "Jennys-MacBook-Pro.local:1431";
+        String brokerLocation = args[0];
+        String filepath = args[1];
+//        String brokerLocation = "Jennys-MacBook-Pro.local:1431";
+//        String filepath = "files/access_test.log";
 
         // Open a connection to the Broker by creating a new Producer object
         // send producer identity to broker
@@ -40,10 +37,10 @@ public class RunProducer {
         String data;
         String topic;
         String key;
-        int partition = 1;
+        int partition = 0;
         int offset = 0;
         try{
-            FileInputStream fstream = new FileInputStream("files/access_test.log");
+            FileInputStream fstream = new FileInputStream(filepath);
             BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
             String strLine;
             /* read log line by line */

@@ -1,8 +1,14 @@
 import java.io.IOException;
+import java.util.List;
 
 public class runBroker {
     public static void main(String[] args){
-        Broker broker = new Broker("Jennys-MacBook-Pro.local", 1431); // hostname
+        List<Object> maps = Utilities.readConfig();
+        IPMap ipMap = (IPMap) maps.get(0);
+        PortMap portMap = (PortMap) maps.get(1);
+        String brokerHostName = Utilities.getHostName();
+        int brokerPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(brokerHostName)));
+        Broker broker = new Broker(brokerHostName, brokerPort);
         try {
             broker.run();
         } catch (IOException e) {

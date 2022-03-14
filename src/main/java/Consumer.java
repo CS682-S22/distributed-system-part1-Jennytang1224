@@ -46,8 +46,12 @@ public class Consumer {
         System.out.println("this consumer is connecting to broker " + brokerLocation);
         // draft peerinfo
         String type = "consumer";
-        peerHostName = "Jennys-MacBook-Pro.local";
-        peerPort = 1435;
+        List<Object> maps = Utilities.readConfig();
+        IPMap ipMap = (IPMap) maps.get(0);
+        PortMap portMap = (PortMap) maps.get(1);
+        String peerHostName = Utilities.getHostName();
+        int peerPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(peerHostName)));
+
         PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
                 .setType(type)
                 .setHostName(peerHostName)
@@ -164,12 +168,7 @@ public class Consumer {
         catch(IOException e){
             System.out.println("file writing error :(");
         }
-
-
-
     }
-
-
 
     public void writeToSocket(byte[] message){
         try {
@@ -180,8 +179,6 @@ public class Consumer {
             e.printStackTrace();
         }
     }
-
-
 
     public void close(){
 

@@ -1,6 +1,7 @@
 import dsd.pubsub.protos.PeerInfo;
 import java.io.*;
 import java.net.Socket;
+import java.util.List;
 
 //producer send data to broker
 public class Producer {
@@ -29,10 +30,17 @@ public class Producer {
 
         System.out.println("this producer is connecting to broker " + brokerLocation);
         // draft peerinfo
+        String type = "producer";
+        List<Object> maps = Utilities.readConfig();
+        IPMap ipMap = (IPMap) maps.get(0);
+        PortMap portMap = (PortMap) maps.get(1);
+        String peerHostName = Utilities.getHostName();
+        int peerPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(peerHostName)));
+
         PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
-                .setType("producer")
-                .setHostName("Jennys-MacBook-Pro.local")
-                .setPortNumber(1432)
+                .setType(type)
+                .setHostName(peerHostName)
+                .setPortNumber(peerPort)
                 .build();
         this.connection.send(peerInfo.toByteArray());
         System.out.println("producer sends first msg to broker with its identity...\n");
