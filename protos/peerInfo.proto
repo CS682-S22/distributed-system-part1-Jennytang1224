@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+//from ProtocolBuffersExample directory compile this as follows:
+//protoc --java_out=src/main/java/ protos/peerInfo.proto
+
+option java_package = "dsd.pubsub.protos";
+option java_outer_classname = "PeerInfo";
+
+message Peer{
+  string type = 1; // producer or consumer
+  string hostName = 2;
+  int32 portNumber = 3;
+}
+
+
