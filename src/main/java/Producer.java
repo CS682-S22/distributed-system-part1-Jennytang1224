@@ -1,6 +1,8 @@
+import dsd.pubsub.protos.PeerInfo;
 import java.io.*;
 import java.net.Socket;
 
+//producer send data to broker
 public class Producer {
     private String brokerLocation;
     private int brokerPort;
@@ -8,6 +10,7 @@ public class Producer {
     private Socket socket;
     private DataInputStream input;
     private DataOutputStream output;
+    private Connection connection;
 
 
     public Producer(String brokerLocation) {
@@ -17,11 +20,22 @@ public class Producer {
         this.socket = null;
         try {
             this.socket = new Socket(this.brokerHostName, this.brokerPort);
+            this.connection = new Connection(this.socket);
             this.input = new DataInputStream(new BufferedInputStream(this.socket.getInputStream()));
             this.output = new DataOutputStream(new BufferedOutputStream(this.socket.getOutputStream()));
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        System.out.println("this producer is connecting to broker " + brokerLocation);
+        // draft peerinfo
+        PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
+                .setType("producer")
+                .setHostName("Jennys-MacBook-Pro.local")
+                .setPortNumber(1432)
+                .build();
+        this.connection.send(peerInfo.toByteArray());
+        System.out.println("producer sends first msg to broker with its identity...\n");
     }
 
 
@@ -41,9 +55,7 @@ public class Producer {
      */
 
     public void send(byte[] record) {
-
         writeToSocket(record);
-
     }
 
     /**
