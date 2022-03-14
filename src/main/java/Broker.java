@@ -95,13 +95,13 @@ public class Broker {
             PeerInfo.Peer p = null;
             while (receiving) {
                 byte[] buffer = conn.receive();
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
                 if (buffer == null || buffer.length == 0) {
-                    System.out.println("nothing received/ finished receiving");
+                   // System.out.println("nothing received/ finished receiving");
 
                 }
                 else {

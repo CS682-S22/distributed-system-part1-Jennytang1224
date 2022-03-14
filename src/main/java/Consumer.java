@@ -30,7 +30,7 @@ public class Consumer {
         this.brokerLocation = brokerLocation;
         this.topic = topic;
         this.startingPosition = startingPosition;
-        this.brokerHostName =brokerLocation.split(":")[0];
+        this.brokerHostName = brokerLocation.split(":")[0];
         this.brokerPort = Integer.parseInt(brokerLocation.split(":")[1]);
         this.socket = null;
 
@@ -57,41 +57,8 @@ public class Consumer {
         //save consumer info to filename
         outputPath = type + "_" + peerHostName + "_" + peerPort + "_output";
         System.out.println("consumer sends first msg to broker with its identity...\n");
-
-    }
-
-    /**
-     * use threads to start the connections, receive and send data concurrently
-     */
-    public void run() throws IOException{
-        Thread serverListener = new Thread(() -> {
-            boolean running = true;
-            try {
-                this.server = new Server(peerPort);
-                System.out.println("this consumer starts listening on port: " + peerPort + "...");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            while (running) {
-                System.out.println("while running...");
-                Connection connection = this.server.nextConnection(); // calls accept on server socket to block
-                System.out.println("new receiver thread...");
-                Thread serverReceiver = new Thread(new Receiver(peerHostName, peerPort, connection));
-
-                System.out.println("receiver starting...");
-                serverReceiver.start();
-
-            }
-        });
-        serverListener.start();
-        System.out.println("listener starting...");
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
+        Thread serverReceiver = new Thread(new Receiver(peerHostName, peerPort, this.connection));
+        serverReceiver.start();
     }
 
     public byte[] poll(Duration timeout){
@@ -100,12 +67,10 @@ public class Consumer {
 
     // send request to broker
     public void subscribe(String topic, int startingPosition){
-
         MessageInfo.Message request = MessageInfo.Message.newBuilder()
                 .setTopic(topic)
                 .setOffset(startingPosition)
                 .build();
-
         writeToSocket(request.toByteArray());
     }
 
@@ -132,6 +97,21 @@ public class Consumer {
         @Override
         public void run() {
             MessageInfo.Message m = null;
+            Runnable add = () -> {
+                byte[] result = conn.receive();
+                if (result != null) {
+                    try {
+                        bq.put(MessageInfo.Message.parseFrom(result));
+                        System.out.println("a record has been put into the bq...");
+                    } catch (InvalidProtocolBufferException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else{
+//                    System.out.println("received result is null");
+                }
+            };
+
             while (receiving) {
 //                byte[] buffer = conn.receive();
 //                try {
@@ -149,31 +129,21 @@ public class Consumer {
 //                }
 
 //                String value = m.getValue(); // data
-                System.out.println("add to bq:");
-                Runnable add = () -> {
-                    byte[] result = conn.receive();
-                    if (result != null) {
-                        try {
-                            bq.put(MessageInfo.Message.parseFrom(result));
-                            System.out.println("a record has been put into the bq...");
-                        } catch (InvalidProtocolBufferException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    else{
-                        System.out.println("received result is null");
-                    }
-                };
+           //     System.out.println("while receiving~");
                 executor.execute(add);
                 m = bq.poll(30);
                 if (m != null) { // received within timeout
                     //save to file
                     byte[] arr = m.getValue().getBytes(StandardCharsets.UTF_8);
                     try {
-                        writeBytesToFile(outputPath, arr);
+                        writeBytesToFile("files/" + outputPath, arr);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
+                }
+                else{
+//                    System.out.println("m == null");
 
                 }
             }
@@ -188,10 +158,14 @@ public class Consumer {
         try (FileOutputStream fos = new FileOutputStream(fileOutput, true)) {
             System.out.println("writing to the file...");
             fos.write(buf);
+            fos.write(10);
+            fos.flush();
         }
         catch(IOException e){
             System.out.println("file writing error :(");
         }
+
+
 
     }
 

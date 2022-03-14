@@ -30,11 +30,11 @@ public class RunConsumer {
         // Connect to the consumer
         Consumer consumer = new Consumer(brokerLocation, topic, startingPosition);
 
-        consumer.subscribe(topic, startingPosition);
-
         System.out.println("subscribed to topic: " + topic + " starting at position: " + startingPosition);
 
-        consumer.run();
+        consumer.subscribe(topic, startingPosition);
+
+   //     consumer.run();
 
 
         // Continue to pull messages...forever
