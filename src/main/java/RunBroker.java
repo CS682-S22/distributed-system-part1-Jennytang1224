@@ -1,7 +1,7 @@
 import java.io.IOException;
 import java.util.List;
 
-public class runBroker {
+public class RunBroker {
     public static void main(String[] args){
         List<Object> maps = Utilities.readConfig();
         IPMap ipMap = (IPMap) maps.get(0);
