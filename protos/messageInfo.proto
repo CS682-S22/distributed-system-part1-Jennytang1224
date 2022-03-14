@@ -4,12 +4,14 @@ syntax = "proto3";
 //protoc --java_out=src/main/java/ protos/dataInfo.proto
 
 option java_package = "dsd.pubsub.protos";
-option java_outer_classname = "DataInfo";
+option java_outer_classname = "MessageInfo";
 
-message Data{
+message Message{
   string topic = 1;
   string key = 2;
-  string data = 3;
+  string value = 3;
+  string offset = 4;
+  string partition = 5;
 }
 
 
