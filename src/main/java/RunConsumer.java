@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 public class RunConsumer {
     public static void main(String[] args) throws IOException {
-        //usage: topic brokerLocation startingPosition
+        //usage: brokerLocation topic startingPosition
      //   check argument length
         if(args.length == 0){
             System.out.println("enter topic");
@@ -18,8 +18,9 @@ public class RunConsumer {
         }
 //         Specify the location of the broker, topic of interest for this specific
 //         consumer object, and a starting position in the message stream.
-        String topic = args[0];
-        String brokerLocation = args[1];
+
+        String brokerLocation = args[0];
+        String topic = args[1];
         int startingPosition = Integer.parseInt(args[2]);
 
 //          String brokerLocation = "localhost:1431";

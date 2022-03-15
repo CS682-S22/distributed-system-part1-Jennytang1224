@@ -15,11 +15,11 @@ public class RunProducer {
             System.out.println("enter topic and message");
             return;
         }
-        else if (args.length < 3){
+        else if (args.length < 2){
             System.out.println("missing another argument");
             return;
         }
-        else if (args.length > 3){
+        else if (args.length > 2){
             System.out.println("invalid number of arguments");
             return;
         }
