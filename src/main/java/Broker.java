@@ -137,6 +137,7 @@ public class Broker {
                         else if(type.equals("consumer")){
 
 //                            readFromCluster(buffer, conn);
+                            System.out.println("broker side topicmap size: " + topicMap.size());
                             Thread th = new Thread(new SendConsumerData(conn, buffer, topicMap));
                             th.start();
                             counter++;
