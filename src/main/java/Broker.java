@@ -137,7 +137,7 @@ public class Broker {
                         else if(type.equals("consumer")){
 
 //                            readFromCluster(buffer, conn);
-                            Thread th = new Thread(new SendConsumerData(conn, buffer));
+                            Thread th = new Thread(new SendConsumerData(conn, buffer, topicList, topicMap));
                             th.start();
                             counter++;
                         }
