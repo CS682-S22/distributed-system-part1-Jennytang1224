@@ -95,14 +95,8 @@ public class Broker {
             PeerInfo.Peer p = null;
             while (receiving) {
                 byte[] buffer = conn.receive();
-//                try {
-//                    Thread.sleep(1000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
                 if (buffer == null || buffer.length == 0) {
                    // System.out.println("nothing received/ finished receiving");
-
                 }
                 else {
                     if(counter == 0) { // first mesg is peerinfo
@@ -121,11 +115,12 @@ public class Broker {
                             // get the messageInfo though socket
                             System.out.println("this broker has connected to producer: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
-                            // fire a new thread to handle producer
+
+
                         } else if (type.equals("consumer")) {
-                            //consumer poll
                             System.out.println("this broker has connected to consumer: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
+
                         } else {
                             System.out.println("invalid type, should be either producer or consumer");
                             //System.exit(-1);
@@ -134,12 +129,16 @@ public class Broker {
                     }
                     else{ // when receiving data
                         if(type.equals("producer")) {
-                            writeToCluster(buffer);
+//                            writeToCluster(buffer);
+                            Thread th = new Thread(new ReceiveProducerData(conn, buffer));
+                            th.start();
                             counter++;
                         }
                         else if(type.equals("consumer")){
 
-                            readFromCluster(buffer, conn);
+//                            readFromCluster(buffer, conn);
+                            Thread th = new Thread(new SendConsumerData(conn, buffer));
+                            th.start();
                             counter++;
                         }
                         else{
@@ -239,14 +238,10 @@ public class Broker {
 
 
             //notify other brokers to send their data related to this topic to the consumer
-            notifyOtherBrokers();
+//            notifyOtherBrokers();
       //  }
     }
 
-    // broker1 will notify all other brokers to send this topic to the consumer
-    public static void notifyOtherBrokers(){
-
-    }
 
     public synchronized void shutdown() {
         this.running = false;
