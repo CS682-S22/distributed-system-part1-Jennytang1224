@@ -95,6 +95,7 @@ public class Broker {
         public void run() {
             PeerInfo.Peer p = null;
             while (receiving) {
+                System.out.println("broker receiving data from connection ");
                 byte[] buffer = conn.receive();
                 if (buffer == null || buffer.length == 0) {
                    // System.out.println("nothing received/ finished receiving");

@@ -54,12 +54,13 @@ public class RunProducer {
                     m.find();
                     topic = m.group(1);
                     key = m.group(2);
-                    offset += data.getBytes(StandardCharsets.UTF_8).length;
-                   // offset += 1; // monotonically increasing
                     System.out.println(topic);
                     System.out.println(key);
                     if (key.length() < 10) { // sanity check
                         // build protobuffer
+                        offset += data.getBytes(StandardCharsets.UTF_8).length;
+                        System.out.println("set offset: " + offset);
+                        // offset += 1; // monotonically increasing
                         MessageInfo.Message record = MessageInfo.Message.newBuilder()
                                 .setTopic(topic)
                                 .setKey(key)

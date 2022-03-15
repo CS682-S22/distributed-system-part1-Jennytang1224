@@ -108,7 +108,7 @@ public class Utilities {
         return output;
     }
 
-    public static int getBytesOffset(int id, String offsetFilePath){
+    public static int getBytesOffsetById(int id, String offsetFilePath){
         // id,offset
         int offset;
         BufferedReader reader = null;
@@ -119,6 +119,25 @@ public class Utilities {
                 if(line.startsWith(String.valueOf(id))){
                     offset = Integer.parseInt(line.split(",")[1]);
                     return offset;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    public static int getIdByOffset(int offset, String offsetFilePath){
+        // id,offset
+        int id;
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new FileReader(offsetFilePath));
+            String line = reader.readLine();
+            while (line != null){
+                if(line.endsWith(String.valueOf(offset))){
+                    id = Integer.parseInt(line.split(",")[0]);
+                    return id;
                 }
             }
         } catch (IOException e) {
