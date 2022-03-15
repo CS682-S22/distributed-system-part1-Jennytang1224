@@ -42,7 +42,13 @@ public class ReceiveProducerData implements Runnable{
             topicMap.put(topic, newList);
         }
         // save intermediate data msg id, offset of bytes
-        String line = messageCounter + "," + d.getOffset();
+        String line;
+        if(messageCounter == 0){
+            line = messageCounter + "," + 0;
+        }
+        else {
+            line = messageCounter++ + "," + d.getOffset();
+        }
         byte[] arr = line.getBytes(StandardCharsets.UTF_8);
         try {
             writeBytesToFile("files/" + outputPath, arr);
@@ -53,7 +59,6 @@ public class ReceiveProducerData implements Runnable{
 
         //   }
         System.out.println("topic map size: " + topicMap.size());
-        messageCounter++;
 
     }
 

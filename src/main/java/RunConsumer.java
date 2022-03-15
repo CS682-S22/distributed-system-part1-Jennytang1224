@@ -1,3 +1,4 @@
+import com.google.protobuf.ApiOrBuilder;
 import dsd.pubsub.protos.MessageInfo;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ public class RunConsumer {
         System.out.println("subscribed to topic: " + topic + " starting at position: " + startingPosition);
 
         int offset = Utilities.getBytesOffset(startingPosition, Utilities.offsetFilePath);
+        System.out.println("offset: " + offset);
         if(offset == -1){ // cant find the id
             System.out.println("No such starting position exists, try again");
             System.exit(-1);
