@@ -14,7 +14,7 @@ import java.util.Random;
  */
 public class Utilities {
 
-    public static String HostConfigFileName = "files/config.json";
+    public static String HostConfigFileName = "src/config.json";
     private static String hostname;
 
     /**
