@@ -47,9 +47,36 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
 
-                <configuration>
-                    <mainClass>Run</mainClass>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>broker</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>RunBroker</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>producer</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>RunProducer</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>consumer</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>RunConsumer</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
+
             </plugin>
         </plugins>
     </build>
