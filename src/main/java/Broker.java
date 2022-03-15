@@ -132,6 +132,11 @@ public class Broker {
 //                            writeToCluster(buffer);
                             Thread th = new Thread(new ReceiveProducerData(conn, buffer, topicMap));
                             th.start();
+                            try {
+                                th.join();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                             counter++;
                         }
                         else if(type.equals("consumer")){
@@ -140,6 +145,11 @@ public class Broker {
                             System.out.println("broker side topicmap size: " + topicMap.size());
                             Thread th = new Thread(new SendConsumerData(conn, buffer, topicMap));
                             th.start();
+                            try {
+                                th.join();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                             counter++;
                         }
                         else{

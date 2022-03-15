@@ -61,6 +61,7 @@ public class Consumer {
         //save consumer info to filename
         outputPath = type + "_" + peerHostName + "_" + peerPort + "_output";
         System.out.println("consumer sends first msg to broker with its identity...\n");
+
         Thread serverReceiver = new Thread(new Receiver(peerHostName, peerPort, this.connection));
         serverReceiver.start();
     }
