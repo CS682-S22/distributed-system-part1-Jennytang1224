@@ -8,7 +8,7 @@ option java_outer_classname = "MessageInfo";
 
 message Message{
   string key = 1;
-  string value = 2;
+  bytes value = 2;
   int32 partition = 3;
   int32 offset = 4;
   string topic = 5;

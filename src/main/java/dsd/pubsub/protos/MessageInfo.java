@@ -31,16 +31,10 @@ public final class MessageInfo {
         getKeyBytes();
 
     /**
-     * <code>string value = 2;</code>
+     * <code>bytes value = 2;</code>
      * @return The value.
      */
-    java.lang.String getValue();
-    /**
-     * <code>string value = 2;</code>
-     * @return The bytes for value.
-     */
-    com.google.protobuf.ByteString
-        getValueBytes();
+    com.google.protobuf.ByteString getValue();
 
     /**
      * <code>int32 partition = 3;</code>
@@ -80,7 +74,7 @@ public final class MessageInfo {
     }
     private Message() {
       key_ = "";
-      value_ = "";
+      value_ = com.google.protobuf.ByteString.EMPTY;
       topic_ = "";
     }
 
@@ -121,9 +115,8 @@ public final class MessageInfo {
               break;
             }
             case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
 
-              value_ = s;
+              value_ = input.readBytes();
               break;
             }
             case 24: {
@@ -213,41 +206,14 @@ public final class MessageInfo {
     }
 
     public static final int VALUE_FIELD_NUMBER = 2;
-    private volatile java.lang.Object value_;
+    private com.google.protobuf.ByteString value_;
     /**
-     * <code>string value = 2;</code>
+     * <code>bytes value = 2;</code>
      * @return The value.
      */
     @java.lang.Override
-    public java.lang.String getValue() {
-      java.lang.Object ref = value_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        value_ = s;
-        return s;
-      }
-    }
-    /**
-     * <code>string value = 2;</code>
-     * @return The bytes for value.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getValueBytes() {
-      java.lang.Object ref = value_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        value_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
+    public com.google.protobuf.ByteString getValue() {
+      return value_;
     }
 
     public static final int PARTITION_FIELD_NUMBER = 3;
@@ -327,8 +293,8 @@ public final class MessageInfo {
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(key_)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, key_);
       }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(value_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, value_);
+      if (!value_.isEmpty()) {
+        output.writeBytes(2, value_);
       }
       if (partition_ != 0) {
         output.writeInt32(3, partition_);
@@ -351,8 +317,9 @@ public final class MessageInfo {
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(key_)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, key_);
       }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(value_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, value_);
+      if (!value_.isEmpty()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, value_);
       }
       if (partition_ != 0) {
         size += com.google.protobuf.CodedOutputStream
@@ -546,7 +513,7 @@ public final class MessageInfo {
         super.clear();
         key_ = "";
 
-        value_ = "";
+        value_ = com.google.protobuf.ByteString.EMPTY;
 
         partition_ = 0;
 
@@ -637,9 +604,8 @@ public final class MessageInfo {
           key_ = other.key_;
           onChanged();
         }
-        if (!other.getValue().isEmpty()) {
-          value_ = other.value_;
-          onChanged();
+        if (other.getValue() != com.google.protobuf.ByteString.EMPTY) {
+          setValue(other.getValue());
         }
         if (other.getPartition() != 0) {
           setPartition(other.getPartition());
@@ -756,47 +722,21 @@ public final class MessageInfo {
         return this;
       }
 
-      private java.lang.Object value_ = "";
+      private com.google.protobuf.ByteString value_ = com.google.protobuf.ByteString.EMPTY;
       /**
-       * <code>string value = 2;</code>
+       * <code>bytes value = 2;</code>
        * @return The value.
        */
-      public java.lang.String getValue() {
-        java.lang.Object ref = value_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          value_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
+      @java.lang.Override
+      public com.google.protobuf.ByteString getValue() {
+        return value_;
       }
       /**
-       * <code>string value = 2;</code>
-       * @return The bytes for value.
-       */
-      public com.google.protobuf.ByteString
-          getValueBytes() {
-        java.lang.Object ref = value_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          value_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>string value = 2;</code>
+       * <code>bytes value = 2;</code>
        * @param value The value to set.
        * @return This builder for chaining.
        */
-      public Builder setValue(
-          java.lang.String value) {
+      public Builder setValue(com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -806,28 +746,12 @@ public final class MessageInfo {
         return this;
       }
       /**
-       * <code>string value = 2;</code>
+       * <code>bytes value = 2;</code>
        * @return This builder for chaining.
        */
       public Builder clearValue() {
         
         value_ = getDefaultInstance().getValue();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>string value = 2;</code>
-       * @param value The bytes for value to set.
-       * @return This builder for chaining.
-       */
-      public Builder setValueBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        value_ = value;
         onChanged();
         return this;
       }
@@ -1037,7 +961,7 @@ public final class MessageInfo {
   static {
     java.lang.String[] descriptorData = {
       "\n\030protos/messageInfo.proto\"W\n\007Message\022\013\n" +
-      "\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t\022\021\n\tpartition\030\003" +
+      "\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\014\022\021\n\tpartition\030\003" +
       " \001(\005\022\016\n\006offset\030\004 \001(\005\022\r\n\005topic\030\005 \001(\tB \n\021d" +
       "sd.pubsub.protosB\013MessageInfob\006proto3"
     };
