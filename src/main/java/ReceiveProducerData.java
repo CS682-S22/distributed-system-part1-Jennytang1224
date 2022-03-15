@@ -1,9 +1,7 @@
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.MessageInfo;
 
-import java.io.BufferedReader;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -13,15 +11,16 @@ public class ReceiveProducerData implements Runnable{
     Connection connection;
     byte[] recordBytes;
     private Map<String, CopyOnWriteArrayList> topicMap;// <topic1: topic1_list, topic2: topic2_list>
-    private String outputPath = "idMapOffset";
+    private String outputPath = "files/idMapOffset";
     private int messageCounter;
+    private int offsetInMem;
 
-    public ReceiveProducerData(Connection connection, byte[] recordBytes, Map<String, CopyOnWriteArrayList> topicMap, int messageCounter) {
+    public ReceiveProducerData(Connection connection, byte[] recordBytes, Map<String, CopyOnWriteArrayList> topicMap, int messageCounter, int offsetInMem) {
         this.connection = connection;
         this.recordBytes = recordBytes;
         this.topicMap = topicMap;
         this.messageCounter = messageCounter;
-
+        this.offsetInMem = offsetInMem;
     }
 
     @Override
@@ -46,18 +45,17 @@ public class ReceiveProducerData implements Runnable{
         String line;
         if(this.messageCounter == 0){
             line = this.messageCounter + "," + 0;
-        }
-        else {
-            line = this.messageCounter + "," + d.getOffset();
+        } else {
+            offsetInMem += d.getOffset();
+            line = this.messageCounter + "," + offsetInMem;
         }
         this.messageCounter++;
         byte[] arr = line.getBytes(StandardCharsets.UTF_8);
         try {
-            writeBytesToFile("files/" + outputPath, arr);
+            writeBytesToFile(outputPath, arr);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
 
         //   }
         System.out.println("topic map size: " + topicMap.size());

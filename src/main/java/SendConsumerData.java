@@ -26,10 +26,10 @@ public class SendConsumerData implements Runnable{
             e.printStackTrace();
         }
         String topic = d.getTopic();
-        int offset = d.getOffset();
-        System.out.println("consumer subscribed to: " + topic + "at position: " + offset);
+        int startingPosition = d.getOffset();
+        System.out.println("consumer subscribed to: " + topic + " at position: " + startingPosition);
         //offset to id
-        int id = Utilities.getIdByOffset(offset, Utilities.offsetFilePath);
+     //   int id = Utilities.getIdByOffset(startingPosition, Utilities.offsetFilePath);
 
         //in the hashmap, get the corresponding list of this topic
         if (!topicMap.containsKey(topic)) {
@@ -38,13 +38,12 @@ public class SendConsumerData implements Runnable{
         CopyOnWriteArrayList<byte[]> topicList = topicMap.get(topic);
 
         // start getting the all record from this topic
-        for (int i = id; i < topicList.size(); i++) {
+        for (int i = startingPosition; i < topicList.size(); i++) {
             byte[] singleRecord = topicList.get(i);
             // send ALL record in this list to the consumer
             connection.send(singleRecord);
             System.out.println("A record has sent to the consumer");
         }
-
 
         //notify other brokers to send their data related to this topic to the consumer
         notifyOtherBrokers();

@@ -1,5 +1,7 @@
+import com.google.protobuf.ByteString;
 import dsd.pubsub.protos.MessageInfo;
 
+import javax.sound.sampled.AudioFormat;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
@@ -35,11 +37,11 @@ public class RunProducer {
         Producer producer = new Producer(brokerLocation);
 
         // for each data record, send topic, key and data
-        String data;
+        ByteString data = null;
         String topic;
         String key;
         int partition = 0;
-        int offset = 0;
+        int offset;
         try{
             FileInputStream fstream = new FileInputStream(filepath);
             BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
@@ -47,7 +49,7 @@ public class RunProducer {
             /* read log line by line */
             while ((strLine = br.readLine()) != null)   {
                 if (strLine.contains("GET /image/") || strLine.contains("GET /product/")) {
-                    data = strLine;
+                    data = ByteString.copyFromUtf8(strLine);
                     System.out.println(strLine);
                     Pattern pattern =  Pattern.compile("GET /(.+?)/(.+?)/");
                     Matcher m =  pattern.matcher(strLine);
@@ -58,7 +60,7 @@ public class RunProducer {
                     System.out.println(key);
                     if (key.length() < 10) { // sanity check
                         // build protobuffer
-                        offset += data.getBytes(StandardCharsets.UTF_8).length;
+                        offset = data.size();
                         System.out.println("set offset: " + offset);
                         // offset += 1; // monotonically increasing
                         MessageInfo.Message record = MessageInfo.Message.newBuilder()

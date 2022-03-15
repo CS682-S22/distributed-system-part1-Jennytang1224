@@ -59,7 +59,7 @@ public class Consumer {
                 .build();
         this.connection.send(peerInfo.toByteArray());
         //save consumer info to filename
-        outputPath = type + "_" + peerHostName + "_" + peerPort + "_output";
+        outputPath = "files/" + type + "_" + peerHostName + "_" + peerPort + "_output";
         System.out.println("consumer sends first msg to broker with its identity...\n");
 
         Thread serverReceiver = new Thread(new Receiver(peerHostName, peerPort, this.connection));
@@ -78,7 +78,6 @@ public class Consumer {
                 .build();
         writeToSocket(request.toByteArray());
     }
-
 
     /**
      * inner class Receiver
@@ -122,9 +121,9 @@ public class Consumer {
                 m = bq.poll(30);
                 if (m != null) { // received within timeout
                     //save to file
-                    byte[] arr = m.getValue().getBytes(StandardCharsets.UTF_8);
+                    byte[] arr = m.getValue().toByteArray();
                     try {
-                        writeBytesToFile("files/" + outputPath, arr);
+                        writeBytesToFile(outputPath, arr);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

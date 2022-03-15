@@ -25,6 +25,7 @@ public class Broker {
     static String peerHostName;
     static int peerPort;
     static int messageCounter = 0;
+    static int offsetInMem = 0;
 
 
 
@@ -68,8 +69,6 @@ public class Broker {
 
         //receive peer info
 
-
-
 //        Thread clientSender = new Thread(new Sender(this.hostName, String.valueOf(this.port), this.connection));
 //        clientSender.start();
     }
@@ -95,7 +94,7 @@ public class Broker {
         public void run() {
             PeerInfo.Peer p = null;
             while (receiving) {
-                System.out.println("broker receiving data from connection ");
+             //   System.out.println("broker receiving data from connection ");
                 byte[] buffer = conn.receive();
                 if (buffer == null || buffer.length == 0) {
                    // System.out.println("nothing received/ finished receiving");
@@ -132,7 +131,7 @@ public class Broker {
                     else{ // when receiving data
                         if(type.equals("producer")) {
 //                            writeToCluster(buffer);
-                            Thread th = new Thread(new ReceiveProducerData(conn, buffer, topicMap, messageCounter));
+                            Thread th = new Thread(new ReceiveProducerData(conn, buffer, topicMap, messageCounter, offsetInMem));
                             th.start();
                             try {
                                 th.join();
