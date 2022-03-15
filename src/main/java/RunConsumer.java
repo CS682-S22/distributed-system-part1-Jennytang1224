@@ -32,9 +32,12 @@ public class RunConsumer {
 
         System.out.println("subscribed to topic: " + topic + " starting at position: " + startingPosition);
 
-        consumer.subscribe(topic, startingPosition);
-
-   //     consumer.run();
+        int offset = Utilities.getBytesOffset(startingPosition, Utilities.offsetFilePath);
+        if(offset == -1){ // cant find the id
+            System.out.println("No such starting position exists, try again");
+            System.exit(-1);
+        }
+        consumer.subscribe(topic, offset);
 
 
         // Continue to pull messages...forever

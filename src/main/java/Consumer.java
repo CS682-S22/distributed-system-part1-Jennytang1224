@@ -118,23 +118,6 @@ public class Consumer {
             };
 
             while (receiving) {
-//                byte[] buffer = conn.receive();
-//                try {
-//                    Thread.sleep(100);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//                if (buffer == null || buffer.length == 0) {
-//                    //  System.out.println("nothing received/ finished receiving");
-//                }
-//                try {
-//                    m = MessageInfo.Message.parseFrom(buffer);
-//                } catch (InvalidProtocolBufferException e) {
-//                    e.printStackTrace();
-//                }
-
-//                String value = m.getValue(); // data
-           //     System.out.println("while receiving~");
                 executor.execute(add);
                 m = bq.poll(30);
                 if (m != null) { // received within timeout
@@ -145,11 +128,9 @@ public class Consumer {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-
                 }
                 else{
 //                    System.out.println("m == null");
-
                 }
             }
         }
@@ -180,6 +161,7 @@ public class Consumer {
             e.printStackTrace();
         }
     }
+
 
     public void close(){
 

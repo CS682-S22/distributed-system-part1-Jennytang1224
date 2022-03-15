@@ -14,8 +14,9 @@ import java.util.Random;
  */
 public class Utilities {
 
-    public static String HostConfigFileName = "src/config.json";
+    static String HostConfigFileName = "src/config.json";
     private static String hostname;
+    static String offsetFilePath = "files/idMapOffset";
 
     /**
      * get computer host name
@@ -107,5 +108,23 @@ public class Utilities {
         return output;
     }
 
+    public static int getBytesOffset(int id, String offsetFilePath){
+        // id,offset
+        int offset;
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new FileReader(offsetFilePath));
+            String line = reader.readLine();
+            while (line != null){
+                if(line.startsWith(String.valueOf(id))){
+                    offset = Integer.parseInt(line.split(",")[1]);
+                    return offset;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
 
 }

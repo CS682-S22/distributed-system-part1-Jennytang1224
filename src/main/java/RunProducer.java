@@ -53,8 +53,8 @@ public class RunProducer {
                     m.find();
                     topic = m.group(1);
                     key = m.group(2);
-                  //  offset += data.getBytes(StandardCharsets.UTF_8).length;
-                    offset += 1; // monotonically increasing
+                    offset += data.getBytes(StandardCharsets.UTF_8).length;
+                   // offset += 1; // monotonically increasing
                     System.out.println(topic);
                     System.out.println(key);
                     if (key.length() < 10) { // sanity check
