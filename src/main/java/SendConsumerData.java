@@ -7,7 +7,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SendConsumerData implements Runnable{
     Connection connection;
     byte[] recordBytes;
-    static Map<String, CopyOnWriteArrayList> topicMap;// <topic1: topic1_list, topic2: topic2_list>
+    Map<String, CopyOnWriteArrayList> topicMap;// <topic1: topic1_list, topic2: topic2_list>
 
     public SendConsumerData(Connection connection, byte[] recordBytes,  Map<String, CopyOnWriteArrayList> topicMap ){
         this.connection = connection;
@@ -17,7 +17,7 @@ public class SendConsumerData implements Runnable{
 
     @Override
     public void run() {
-        System.out.println("size of passed in topic map: " + topicMap.size());
+        System.out.println("size of passed in topic map: " + this.topicMap.size());
 
         MessageInfo.Message d = null;
         try {

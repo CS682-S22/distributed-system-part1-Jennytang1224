@@ -18,8 +18,8 @@ public class Broker {
     private DataInputStream input;
     private DataOutputStream output;
     private static volatile boolean running = true;
-    private static CopyOnWriteArrayList<byte[]> topicList;
-    private static Map<String, CopyOnWriteArrayList> topicMap;// <topic1: topic1_list, topic2: topic2_list>
+    static CopyOnWriteArrayList<byte[]> topicList;
+    static Map<String, CopyOnWriteArrayList> topicMap;// <topic1: topic1_list, topic2: topic2_list>
     static Server server;
     private Connection connection;
     static String peerHostName;
