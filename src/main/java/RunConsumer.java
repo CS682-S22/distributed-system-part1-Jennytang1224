@@ -9,24 +9,24 @@ public class RunConsumer {
     public static void main(String[] args) throws IOException {
         //usage: brokerLocation topic startingPosition
      //   check argument length
-        if(args.length == 0){
-            System.out.println("enter topic");
-            return;
-        }
-        else if (args.length > 3){
-            System.out.println("invalid number of arguments");
-            return;
-        }
-//         Specify the location of the broker, topic of interest for this specific
-//         consumer object, and a starting position in the message stream.
+//        if(args.length == 0){
+//            System.out.println("enter topic");
+//            return;
+//        }
+//        else if (args.length > 3){
+//            System.out.println("invalid number of arguments");
+//            return;
+//        }
+////         Specify the location of the broker, topic of interest for this specific
+////         consumer object, and a starting position in the message stream.
+//
+//        String brokerLocation = args[0];
+//        String topic = args[1];
+//        int startingPosition = Integer.parseInt(args[2]);
 
-        String brokerLocation = args[0];
-        String topic = args[1];
-        int startingPosition = Integer.parseInt(args[2]);
-
-//          String brokerLocation = "localhost:1431";
-//          int startingPosition = 0;
-//          String topic = "image";
+          String brokerLocation = "localhost:1431";
+          int startingPosition = 0;
+          String topic = "image";
 
         // Connect to the consumer
         Consumer consumer = new Consumer(brokerLocation, topic, startingPosition);

@@ -13,13 +13,14 @@ public class ReceiveProducerData implements Runnable{
     Connection connection;
     byte[] recordBytes;
     private Map<String, CopyOnWriteArrayList> topicMap;// <topic1: topic1_list, topic2: topic2_list>
-    private int messageCounter = 0;
     private String outputPath = "idMapOffset";
+    private int messageCounter;
 
-    public ReceiveProducerData(Connection connection, byte[] recordBytes, Map<String, CopyOnWriteArrayList> topicMap) {
+    public ReceiveProducerData(Connection connection, byte[] recordBytes, Map<String, CopyOnWriteArrayList> topicMap, int messageCounter) {
         this.connection = connection;
         this.recordBytes = recordBytes;
         this.topicMap = topicMap;
+        this.messageCounter = messageCounter;
 
     }
 
@@ -43,12 +44,13 @@ public class ReceiveProducerData implements Runnable{
         }
         // save intermediate data msg id, offset of bytes
         String line;
-        if(messageCounter == 0){
-            line = messageCounter + "," + 0;
+        if(this.messageCounter == 0){
+            line = this.messageCounter + "," + 0;
         }
         else {
-            line = messageCounter++ + "," + d.getOffset();
+            line = this.messageCounter + "," + d.getOffset();
         }
+        this.messageCounter++;
         byte[] arr = line.getBytes(StandardCharsets.UTF_8);
         try {
             writeBytesToFile("files/" + outputPath, arr);

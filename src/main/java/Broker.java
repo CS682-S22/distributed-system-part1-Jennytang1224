@@ -24,6 +24,7 @@ public class Broker {
     private Connection connection;
     static String peerHostName;
     static int peerPort;
+    static int messageCounter = 0;
 
 
 
@@ -130,7 +131,7 @@ public class Broker {
                     else{ // when receiving data
                         if(type.equals("producer")) {
 //                            writeToCluster(buffer);
-                            Thread th = new Thread(new ReceiveProducerData(conn, buffer, topicMap));
+                            Thread th = new Thread(new ReceiveProducerData(conn, buffer, topicMap, messageCounter));
                             th.start();
                             try {
                                 th.join();
@@ -138,6 +139,7 @@ public class Broker {
                                 e.printStackTrace();
                             }
                             counter++;
+                            messageCounter++;
                         }
                         else if(type.equals("consumer")){
 

@@ -11,23 +11,24 @@ public class RunProducer {
     public static void main(String[] args){
         //usage: brokerLocation filepath
         //check argument length
-        if(args.length == 0){
-            System.out.println("enter topic and message");
-            return;
-        }
-        else if (args.length < 2){
-            System.out.println("missing another argument");
-            return;
-        }
-        else if (args.length > 2){
-            System.out.println("invalid number of arguments");
-            return;
-        }
+//        if(args.length == 0){
+//            System.out.println("enter topic and message");
+//            return;
+//        }
+//        else if (args.length < 2){
+//            System.out.println("missing another argument");
+//            return;
+//        }
+//        else if (args.length > 2){
+//            System.out.println("invalid number of arguments");
+//            return;
+//        }
+//
+//        String brokerLocation = args[0];
+//        String filepath = args[1];
 
-        String brokerLocation = args[0];
-        String filepath = args[1];
-//        String brokerLocation = "Jennys-MacBook-Pro.local:1431";
-//        String filepath = "files/access_test.log";
+        String brokerLocation = "Jennys-MacBook-Pro.local:1431";
+        String filepath = "files/access_test.log";
 
         // Open a connection to the Broker by creating a new Producer object
         // send producer identity to broker
