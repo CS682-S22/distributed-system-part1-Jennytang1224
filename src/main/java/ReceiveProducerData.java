@@ -8,15 +8,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ReceiveProducerData implements Runnable{
     Connection connection;
     byte[] recordBytes;
-    private static CopyOnWriteArrayList<byte[]> topicList;
-    private static Map<String, CopyOnWriteArrayList> topicMap;// <topic1: topic1_list, topic2: topic2_list>
+    private Map<String, CopyOnWriteArrayList> topicMap;// <topic1: topic1_list, topic2: topic2_list>
 
 
-    public ReceiveProducerData(Connection connection, byte[] recordBytes) {
+    public ReceiveProducerData(Connection connection, byte[] recordBytes, Map<String, CopyOnWriteArrayList> topicMap) {
         this.connection = connection;
         this.recordBytes = recordBytes;
-        this.topicList = new CopyOnWriteArrayList<>();
-        this.topicMap = new HashMap<>();
+        this.topicMap = topicMap;
 
     }
 

@@ -130,7 +130,7 @@ public class Broker {
                     else{ // when receiving data
                         if(type.equals("producer")) {
 //                            writeToCluster(buffer);
-                            Thread th = new Thread(new ReceiveProducerData(conn, buffer));
+                            Thread th = new Thread(new ReceiveProducerData(conn, buffer, topicMap));
                             th.start();
                             counter++;
                         }
