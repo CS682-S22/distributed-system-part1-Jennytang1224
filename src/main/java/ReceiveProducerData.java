@@ -58,7 +58,7 @@ public class ReceiveProducerData implements Runnable{
         }
 
         //   }
-        System.out.println("topic map size: " + topicMap.size());
+    //    System.out.println("topic map size: " + topicMap.size());
 
     }
 

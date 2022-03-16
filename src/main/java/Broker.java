@@ -60,7 +60,6 @@ public class Broker {
         });
         serverListener.start(); // start listening ...
 
-
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
@@ -144,7 +143,8 @@ public class Broker {
                         else if(type.equals("consumer")){
 
 //                            readFromCluster(buffer, conn);
-                            System.out.println("broker side topicmap size: " + topicMap.size());
+                     //       System.out.println("broker side topicmap size: " + topicMap.size());
+
                             Thread th = new Thread(new SendConsumerData(conn, buffer, topicMap));
                             th.start();
                             try {
@@ -217,7 +217,7 @@ public class Broker {
             topicMap.put(topic, newList);
         }
      //   }
-        System.out.println("topic map size: " + topicMap.size());
+      //  System.out.println("topic map size: " + topicMap.size());
 
     }
 

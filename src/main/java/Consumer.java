@@ -24,7 +24,8 @@ public class Consumer {
     static Server server;
     static int peerPort;
     static String peerHostName;
-
+    static int receiverCounter = 0;
+    Receiver newReceiver;
 
     public Consumer(String brokerLocation, String topic, int startingPosition) {
         this.brokerLocation = brokerLocation;
@@ -61,23 +62,38 @@ public class Consumer {
         //save consumer info to filename
         outputPath = "files/" + type + "_" + peerHostName + "_" + peerPort + "_output";
         System.out.println("consumer sends first msg to broker with its identity...\n");
-
-        Thread serverReceiver = new Thread(new Receiver(peerHostName, peerPort, this.connection));
+        newReceiver = new Receiver(peerHostName, peerPort, this.connection);
+        Thread serverReceiver = new Thread(newReceiver);
         serverReceiver.start();
+
     }
 
-    public byte[] poll(Duration timeout){
+
+    public Consumer(Connection connection, int startingPosition){
+        this.connection = connection;
+        this.startingPosition = startingPosition;
+    }
+
+    public byte[] poll(int startingPosition, int timeout){
+
         return new byte[0];
     }
 
     // send request to broker
     public void subscribe(String topic, int startingPosition){
+        System.out.println("subscribed to topic: " + topic + " starting at position: " + startingPosition);
         MessageInfo.Message request = MessageInfo.Message.newBuilder()
                 .setTopic(topic)
                 .setOffset(startingPosition)
                 .build();
-        writeToSocket(request.toByteArray());
+        //writeToSocket(request.toByteArray());
+        this.connection.send(request.toByteArray());
     }
+
+    public int getPositionCounter(){
+        return newReceiver.getPositionCounter();
+    }
+
 
     /**
      * inner class Receiver
@@ -89,6 +105,7 @@ public class Consumer {
         boolean receiving = true;
         private CS601BlockingQueue<MessageInfo.Message> bq;
         private ExecutorService executor;
+        int positionCounter;
 
         public Receiver(String name, int port, Connection conn) {
             this.name = name;
@@ -96,6 +113,11 @@ public class Consumer {
             this.conn = conn;
             this.bq = new CS601BlockingQueue<>(3);
             this.executor = Executors.newSingleThreadExecutor();
+            this.positionCounter = 0;
+        }
+
+        public int getPositionCounter(){
+            return positionCounter;
         }
 
         @Override
@@ -106,6 +128,7 @@ public class Consumer {
                 if (result != null) {
                     try {
                         bq.put(MessageInfo.Message.parseFrom(result));
+                        positionCounter++;
                         System.out.println("a record has been put into the bq...");
                     } catch (InvalidProtocolBufferException e) {
                         e.printStackTrace();
@@ -116,6 +139,8 @@ public class Consumer {
                 }
             };
 
+
+            //application poll from bq
             while (receiving) {
                 executor.execute(add);
                 m = bq.poll(30);
@@ -132,6 +157,7 @@ public class Consumer {
 //                    System.out.println("m == null");
                 }
             }
+            positionCounter = 0;
         }
     }
 

@@ -24,9 +24,9 @@ public class RunConsumer {
 //          String topic = "image";
 
         // Connect to the consumer
+
         Consumer consumer = new Consumer(brokerLocation, topic, startingPosition);
 
-        System.out.println("subscribed to topic: " + topic + " starting at position: " + startingPosition);
 
 //        int offset = Utilities.getBytesOffsetById(startingPosition, Utilities.offsetFilePath);
 //        System.out.println("offset: " + offset);
@@ -34,7 +34,28 @@ public class RunConsumer {
 //            System.out.println("No such starting position exists, try again");
 //            System.exit(-1);
 //        }
-        consumer.subscribe(topic, startingPosition);
+
+        int trackSize = -1;
+        while(true) {
+
+            int sizeSavedToBq = consumer.getPositionCounter();
+         //   System.out.println("sizeSavedToBq: " + sizeSavedToBq);
+            if(sizeSavedToBq != trackSize) {
+                startingPosition += sizeSavedToBq;
+            }
+            else{
+                startingPosition += 0;
+            }
+            consumer.subscribe(topic, startingPosition);
+            try { // every 3 sec request new data
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            trackSize = sizeSavedToBq;
+            System.out.println("\n");
+
+        }
 
 
         // Continue to pull messages...forever
