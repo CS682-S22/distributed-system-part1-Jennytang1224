@@ -30,7 +30,8 @@ public class SendConsumerData implements Runnable{
             }
             String topic = d.getTopic();
             startingPosition = d.getOffset();
-            System.out.println("consumer subscribed to: " + topic + " at position: " + startingPosition);
+            System.out.println("Consumer " + connection.getHostName() + ":" + connection.getPort()
+                    + " subscribed to: " + topic + ", at position: " + startingPosition);
             //offset to id
             //   int id = Utilities.getIdByOffset(startingPosition, Utilities.offsetFilePath);
 

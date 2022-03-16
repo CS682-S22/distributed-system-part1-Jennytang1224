@@ -81,7 +81,7 @@ public class Consumer {
 
     // send request to broker
     public void subscribe(String topic, int startingPosition){
-        System.out.println("subscribed to topic: " + topic + " starting at position: " + startingPosition);
+        System.out.println("... Requesting topic: " + topic + " starting at position: " + startingPosition + "...");
         MessageInfo.Message request = MessageInfo.Message.newBuilder()
                 .setTopic(topic)
                 .setOffset(startingPosition)
@@ -129,7 +129,7 @@ public class Consumer {
                     try {
                         bq.put(MessageInfo.Message.parseFrom(result));
                         positionCounter++;
-                        System.out.println("a record has been put into the bq...");
+                        System.out.println("Consumer added a record to the blocking queue...");
                     } catch (InvalidProtocolBufferException e) {
                         e.printStackTrace();
                     }
@@ -167,7 +167,7 @@ public class Consumer {
     private static void writeBytesToFile(String fileOutput, byte[] buf)
             throws IOException {
         try (FileOutputStream fos = new FileOutputStream(fileOutput, true)) {
-            System.out.println("writing to the file...");
+            System.out.println("Application is storing data to the file...");
             fos.write(buf);
             fos.write(10);
             fos.flush();

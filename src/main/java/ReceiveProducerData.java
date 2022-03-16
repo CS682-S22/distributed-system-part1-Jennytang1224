@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ReceiveProducerData implements Runnable{
-    Connection connection;
+    static Connection connection;
     byte[] recordBytes;
     private Map<String, CopyOnWriteArrayList> topicMap;// <topic1: topic1_list, topic2: topic2_list>
     private String outputPath = "files/idMapOffset";
@@ -68,7 +68,8 @@ public class ReceiveProducerData implements Runnable{
     private static void writeBytesToFile(String fileOutput, byte[] buf)
             throws IOException {
         try (FileOutputStream fos = new FileOutputStream(fileOutput, true)) {
-            System.out.println("writing to the file...");
+            System.out.println("Producer " + connection.getHostName() +
+                    ":" + connection.getPort() + " sends offset data to the disk...");
             fos.write(buf);
             fos.write(10); //newline
             fos.flush();

@@ -64,11 +64,8 @@ public class Connection {
      */
 
     public boolean send(byte[] message) {
-
             writeToSocket(message);
             return true;
-
-
     }
 
     /**
@@ -84,5 +81,14 @@ public class Connection {
             e.printStackTrace();
         }
     }
+
+    public String getHostName(){
+        return hostName;
+    }
+
+    public int getPort(){
+        return port;
+    }
+
 
 }

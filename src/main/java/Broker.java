@@ -107,18 +107,19 @@ public class Broker {
                         }
 
                         type = p.getType(); // consumer or producer
-                        System.out.println("peer type: " + type);
+                        System.out.println("\n *** New Connection coming in ***");
+                        System.out.println("Peer type: " + type);
                         peerHostName = p.getHostName();
                         peerPort = p.getPortNumber();
 
                         if (type.equals("producer")) {
                             // get the messageInfo though socket
-                            System.out.println("this broker has connected to producer: " + peerHostName + " port: " + peerPort + "\n");
+                            System.out.println("this Broker now has connected to producer: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
 
 
                         } else if (type.equals("consumer")) {
-                            System.out.println("this broker has connected to consumer: " + peerHostName + " port: " + peerPort + "\n");
+                            System.out.println("this broker NOW has connected to consumer: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
 
                         } else {
@@ -246,7 +247,7 @@ public class Broker {
                 byte[] singleRecord = topicList.get(i);
                 // send ALL record in this list to the consumer
                 conn.send(singleRecord);
-                System.out.println("A record has sent to the consumer");
+                System.out.println("A record has sent to the consumer: " + peerHostName + ":" + peerPort);
             }
 
 
