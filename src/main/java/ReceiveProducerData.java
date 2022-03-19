@@ -68,8 +68,7 @@ public class ReceiveProducerData implements Runnable{
     private static void writeBytesToFile(String fileOutput, byte[] buf)
             throws IOException {
         try (FileOutputStream fos = new FileOutputStream(fileOutput, true)) {
-            System.out.println("Producer " + connection.getHostName() +
-                    ":" + connection.getPort() + " sends offset data to the disk...");
+            System.out.println("Producer sends offset data to the disk...");
             fos.write(buf);
             fos.write(10); //newline
             fos.flush();

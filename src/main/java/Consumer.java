@@ -157,7 +157,6 @@ public class Consumer {
 //                    System.out.println("m == null");
                 }
             }
-            positionCounter = 0;
         }
     }
 

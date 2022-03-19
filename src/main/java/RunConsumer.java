@@ -36,12 +36,15 @@ public class RunConsumer {
 //        }
 
         int trackSize = -1;
-        while(true) {
+        int lastSize = 0;
 
+        while(true) {
             int sizeSavedToBq = consumer.getPositionCounter();
-         //   System.out.println("sizeSavedToBq: " + sizeSavedToBq);
+//            System.out.println("sizeSavedToBq: " + sizeSavedToBq);
             if(sizeSavedToBq != trackSize) {
                 startingPosition += sizeSavedToBq;
+                startingPosition -= lastSize;
+                lastSize = sizeSavedToBq;
             }
             else{
                 startingPosition += 0;
