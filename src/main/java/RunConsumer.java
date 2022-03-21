@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class RunConsumer {
@@ -33,39 +34,48 @@ public class RunConsumer {
         List<Object> maps = Utilities.readBrokerConfig();
         IPMap ipMap = (IPMap) maps.get(0);
         PortMap portMap = (PortMap) maps.get(1);
-        Consumer consumer;
+        Consumer consumer = null;
+        int requestCounter = 0;
 
-        for (int i = 1; i <= ipMap.size(); i++){
-            String brokerHostName = ipMap.getIpById(String.valueOf(i));
-            int brokerPort =  Integer.parseInt(portMap.getPortById(String.valueOf(i)));
-            // Connect to the consumer
-            String brokerLocation = brokerHostName + ":" + brokerPort;
-            consumer = new Consumer(brokerLocation, topic, startingPosition);
+        while(true) {
 
-            int trackSize = -1;
-            int lastSize = 0;
+            for (int i = 1; i <= Utilities.numOfBrokersInSys; i++){ // loop though num of brokers
+                // Connect to the consumer
+                String brokerHostName = ipMap.getIpById(String.valueOf(i));
+                int brokerPort =  Integer.parseInt(portMap.getPortById(String.valueOf(i)));
+                String brokerLocation = brokerHostName + ":" + brokerPort;
+                System.out.println("brokerlocation: " + brokerLocation);
+    //        String brokerLocation = "Jennys-MacBook-Pro.local:1420" ;
+                consumer = new Consumer(brokerLocation, topic, startingPosition);
+             //   int trackSize = -1;
+             //   int lastSize = 0;
+//                int sizeSavedToBq = consumer.getPositionCounter();
+//                System.out.println("sizeSavedToBq: " + sizeSavedToBq);
+//                if(sizeSavedToBq != trackSize) {
+//                    startingPosition += sizeSavedToBq;
+//                    startingPosition -= lastSize;
+//                    lastSize = sizeSavedToBq;
+//                }
+//                else{
+//                    startingPosition += 0;
+//                }
 
-            while(true) {
-                int sizeSavedToBq = consumer.getPositionCounter();
-//            System.out.println("sizeSavedToBq: " + sizeSavedToBq);
-                if(sizeSavedToBq != trackSize) {
-                    startingPosition += sizeSavedToBq;
-                    startingPosition -= lastSize;
-                    lastSize = sizeSavedToBq;
-                }
-                else{
-                    startingPosition += 0;
-                }
+                System.out.println("starting position: " + startingPosition);
                 consumer.subscribe(topic, startingPosition);
                 try { // every 3 sec request new data
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                trackSize = sizeSavedToBq;
+            //    System.out.println("tracksize: " + trackSize);
+             //   trackSize = sizeSavedToBq;
                 System.out.println("\n");
-
             }
+            requestCounter++;
+            if(requestCounter != 0) { // not first time
+                startingPosition = consumer.getMaxPosition() + 1;
+            } // else if first time, will use input starting postion
+
         }
 
 

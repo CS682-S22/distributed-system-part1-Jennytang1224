@@ -24,6 +24,8 @@ public class Consumer {
     static String peerHostName;
     static int receiverCounter = 0;
     Receiver newReceiver;
+    static int maxPosition = -1;
+
 
     public Consumer(String brokerLocation, String topic, int startingPosition) {
         this.brokerLocation = brokerLocation;
@@ -39,7 +41,7 @@ public class Consumer {
             this.input = new DataInputStream(new BufferedInputStream(this.socket.getInputStream()));
             this.output = new DataOutputStream(new BufferedOutputStream(this.socket.getOutputStream()));
         } catch (IOException e) {
-            e.printStackTrace();
+           // e.printStackTrace();
         }
 
         System.out.println("this consumer is connecting to broker " + brokerLocation);
@@ -56,6 +58,10 @@ public class Consumer {
                 .setHostName(peerHostName)
                 .setPortNumber(peerPort)
                 .build();
+        if(connection == null) {
+            System.out.println("(This broker is NOT in use)");
+            return;
+        }
         this.connection.send(peerInfo.toByteArray());
         //save consumer info to filename
         outputPath = "files/" + type + "_" + peerHostName + "_" + peerPort + "_output";
@@ -63,19 +69,9 @@ public class Consumer {
         newReceiver = new Receiver(peerHostName, peerPort, this.connection);
         Thread serverReceiver = new Thread(newReceiver);
         serverReceiver.start();
-
     }
 
 
-    public Consumer(Connection connection, int startingPosition){
-        this.connection = connection;
-        this.startingPosition = startingPosition;
-    }
-
-    public byte[] poll(int startingPosition, int timeout){
-
-        return new byte[0];
-    }
 
     // send request to broker
     public void subscribe(String topic, int startingPosition){
@@ -85,11 +81,18 @@ public class Consumer {
                 .setOffset(startingPosition)
                 .build();
         //writeToSocket(request.toByteArray());
+        if(connection == null) {
+            return;
+        }
         this.connection.send(request.toByteArray());
     }
 
     public int getPositionCounter(){
         return newReceiver.getPositionCounter();
+    }
+
+    public int getMaxPosition(){
+        return maxPosition;
     }
 
 
@@ -104,6 +107,7 @@ public class Consumer {
         private CS601BlockingQueue<MessageInfo.Message> bq;
         private ExecutorService executor;
         int positionCounter;
+
 
         public Receiver(String name, int port, Connection conn) {
             this.name = name;
@@ -126,6 +130,10 @@ public class Consumer {
                 if (result != null) {
                     try {
                         bq.put(MessageInfo.Message.parseFrom(result));
+                        int id = MessageInfo.Message.parseFrom(result).getOffset();
+                        if(id >= maxPosition){
+                            maxPosition = id;
+                        }
                         positionCounter++;
                         System.out.println("Consumer added a record to the blocking queue...");
                     } catch (InvalidProtocolBufferException e) {

@@ -4,6 +4,7 @@ import dsd.pubsub.protos.MessageInfo;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SendConsumerData implements Runnable{
@@ -15,18 +16,27 @@ public class SendConsumerData implements Runnable{
     int startingPosition;
     String topic;
     HashMap<Integer, Connection> connMap;
+    List<HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>>> topicMapList;
+    int brokerID;
 
-    public SendConsumerData(Connection consumerConnection, byte[] recordBytes, HashMap<String, HashMap<Integer,
-            CopyOnWriteArrayList<byte[]>>> topicMap, HashMap<Integer, Connection> connMap){
+
+    public SendConsumerData(Connection consumerConnection, byte[] recordBytes, List<HashMap<String, HashMap<Integer,
+            CopyOnWriteArrayList<byte[]>>>> topicMapList, HashMap<Integer, Connection> connMap, int brokerID){
         this.consumerConnection = consumerConnection;
         this.recordBytes = recordBytes;
-        this.topicMap = topicMap;
         this.connMap = connMap;
+        this.topicMapList = topicMapList;
+        this.brokerID = brokerID;
+
     }
 
     @Override
     public void run() {
-  //  while(true) {
+        // get correct topicMap by brokerID
+        topicMap = topicMapList.get(brokerID-1);
+  //      System.out.println("size of list: " + topicMapList.size());
+
+        //  while(true) {
       //  System.out.println("size of passed in topic map: " + this.topicMap.size());
         MessageInfo.Message d = null;
         try {
@@ -36,31 +46,38 @@ public class SendConsumerData implements Runnable{
         }
         topic = d.getTopic();
         startingPosition = d.getOffset();
-        System.out.println("Consumer subscribed to: " + topic + ", at position: " + startingPosition);
+        System.out.println("Broker: " + brokerID + " -> Consumer subscribed to: " + topic + ", at position: " + startingPosition);
 
-        //in the hashmap, get the corresponding list of this topic
-        System.out.println("consumer topic map size: " + topicMap);
-        if (!topicMap.containsKey(topic)) {
-            System.out.println("No topic called '" + topic + "' in this broker!");
-        } else {
-            partitionMap = topicMap.get(topic);
-            System.out.println("consumer partition map size with topic: " + topic + ": " + partitionMap.size());
+     //   for(int i = 0; i < topicMapList.size(); i++){
+      //      topicMap = topicMapList.get(i);
+            //in the hashmap, get the corresponding list of this topic
+            System.out.println("consumer topic map: " + topicMap);
+            if (!topicMap.containsKey(topic)) {
+                System.out.println("No topic called '" + topic + "' in this broker!");
+            } else {
+                partitionMap = topicMap.get(topic);
+                System.out.println("there are " + partitionMap.size() + " partitions in this consumer with topic: " + topic);
 
-            for (Map.Entry<Integer, CopyOnWriteArrayList<byte[]>> entry : partitionMap.entrySet()) {
-                topicList = entry.getValue();
-                if (startingPosition >= topicList.size()) {
-                    System.out.println("No new Data in partition: " + entry.getKey());
-                } else {
+                for (Map.Entry<Integer, CopyOnWriteArrayList<byte[]>> entry : partitionMap.entrySet()) {
+                    topicList = entry.getValue();
                     // start getting the all record from this topic from starting position
-                    for (int i = startingPosition; i < topicList.size(); i++) {
-                        byte[] singleRecord = topicList.get(i);
-                        // send ALL record in this list to the consumer
-                        consumerConnection.send(singleRecord);
-                        System.out.println("A record has sent to the consumer");
+                    for (int j = 0; j < topicList.size(); j++) {
+                        byte[] record = topicList.get(j);
+                        int id = -1;
+                        try {
+                            id = MessageInfo.Message.parseFrom(record).getOffset();
+                        } catch (InvalidProtocolBufferException e) {
+                            e.printStackTrace();
+                        }
+                        if((id > 0) && (id >= startingPosition)) {
+                            consumerConnection.send(record);
+                            System.out.println("New data in partition: " + entry.getKey() +" - A record has been sent to the consumer \n");
+                        }
+                        System.out.println("no new data in partition: " + entry.getKey() + "\n");
                     }
                 }
             }
-        }
+      //  }
   //      }
     }
 }

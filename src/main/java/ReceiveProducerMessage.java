@@ -66,17 +66,7 @@ public class ReceiveProducerMessage implements Runnable{
         int partitionID = Utilities.CalculatePartition(key, numOfPartitions);
         int brokerID = Utilities.CalculateBroker(partitionID, numOfBrokers);
 
-        // send protobuf with partition ID via assigned broker connection
-        MessageInfo.Message record = MessageInfo.Message.newBuilder()
-                .setTopic(topic)
-                .setKey(key)
-                .setValue(data)
-                .setPartition(partitionID)
-                .setOffset(offset)
-                .build();
 
-        Connection connection = connMap.get(brokerID);
-        connection.send(record.toByteArray());
         // save intermediate file:  msgID, key, topic, partitionID, BrokerID
         String line;
         line = count + "," + key + "," + topic + "," + partitionID + "," + brokerID;
@@ -87,6 +77,19 @@ public class ReceiveProducerMessage implements Runnable{
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        // send protobuf with partition ID via assigned broker connection
+        MessageInfo.Message record = MessageInfo.Message.newBuilder()
+                .setTopic(topic)
+                .setKey(key)
+                .setValue(data)
+                .setPartition(partitionID)
+                .setOffset(count) // use msgid as offset
+                .build();
+
+        Connection connection = connMap.get(brokerID);
+        System.out.println(connection);
+        connection.send(record.toByteArray());
         System.out.println("Message has been sent to the assigned BROKER: " + brokerID + ", PARTITION: " + partitionID);
 
 
@@ -105,10 +108,6 @@ public class ReceiveProducerMessage implements Runnable{
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
-
-
     }
 
     /**

@@ -68,7 +68,7 @@ public class LoadBalancer {
                 this.socket = new Socket(brokerHostName, brokerPort);
                 connection = new Connection(this.socket);
                 connMap.put(brokerCounter, connection);
-                System.out.println("save broker " + brokerCounter + " connection to map");
+//                System.out.println("save broker " + brokerCounter + " connection to map");
                 this.input = new DataInputStream(new BufferedInputStream(this.socket.getInputStream()));
                 this.output = new DataOutputStream(new BufferedOutputStream(this.socket.getOutputStream()));
             } catch (IOException e) {

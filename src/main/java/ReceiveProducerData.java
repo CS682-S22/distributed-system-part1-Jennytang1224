@@ -4,31 +4,50 @@ import dsd.pubsub.protos.MessageInfo;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ReceiveProducerData implements Runnable{
     byte[] recordBytes;
     // topicMap = {image:<p1:list; p2:list>; product: <p1:list>}
-    private HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
+    private List<HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>>> topicMapList;
 
     //    private String outputPath = "files/InfoMap";
 //    private int messageCounter;
 //    private int offsetInMem;
     static CopyOnWriteArrayList<byte[]> topicList;
     static HashMap<Integer, CopyOnWriteArrayList<byte[]>> partitionMap;
+    int brokerID;
+    HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
 
-    public ReceiveProducerData(byte[] recordBytes, HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap,
-                               int messageCounter, int offsetInMem) {
+
+
+
+    public ReceiveProducerData(byte[] recordBytes, List<HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>>> topicMapList,
+                               int messageCounter, int offsetInMem, int brokerID) {
         this.recordBytes = recordBytes;
-        this.topicMap = topicMap;
+        this.topicMapList = topicMapList;
+        this.brokerID = brokerID;
+        System.out.println("BROKER ID: " + brokerID);
+
 //        this.messageCounter = messageCounter;
 //        this.offsetInMem = offsetInMem;
+
+        if(topicMapList.size() == 0){
+            for (int i = 0; i < 5; i++) {
+                topicMapList.add(i, new HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>>());
+            }
+        }
+
+
     }
 
     @Override
     public void run(){
+        // get correct topicMap by brokerID
+        topicMap = topicMapList.get(brokerID-1);
+        System.out.println("size of list: " + topicMapList.size());
+
         MessageInfo.Message d = null;
         try {
             d = MessageInfo.Message.parseFrom(recordBytes);
@@ -36,10 +55,14 @@ public class ReceiveProducerData implements Runnable{
             e.printStackTrace();
         }
         String topic = d.getTopic();
+        int count = d.getOffset();
         int partitionID = d.getPartition();
         System.out.println(partitionID);
         // save msgs to the maps based on topics and partitions:
         //   if(running) {
+       // Set<Object> record = new HashSet<>();
+//        record.add(count);
+//        record.add(recordBytes);
 
         if(this.topicMap != null && this.topicMap.size() == 0) {
             topicList = new CopyOnWriteArrayList<>();
@@ -70,7 +93,7 @@ public class ReceiveProducerData implements Runnable{
         }
 
         //   }
-       System.out.println("topic map: " + topicMap);
+       System.out.println("broker " + brokerID + ": topic map: " + topicMap);
 
     }
 
