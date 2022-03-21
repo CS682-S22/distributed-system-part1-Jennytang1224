@@ -9,22 +9,20 @@ public class RunConsumer {
             System.out.println("enter topic");
             return;
         }
-        else if (args.length > 3){
+        else if (args.length > 2){
             System.out.println("invalid number of arguments");
             return;
         }
 //         Specify the location of the broker, topic of interest for this specific
 //         consumer object, and a starting position in the message stream.
 
-        String LBLocation = args[0];
-        String topic = args[1];
-        int startingPosition = Integer.parseInt(args[2]);
+
+        String topic = args[0];
+        int startingPosition = Integer.parseInt(args[1]);
 
 //          String brokerLocation = "localhost:1431";
 //          int startingPosition = 0;
 //          String topic = "image";
-
-
 
         //based on info map, find the partition with the starting position
 //        List<Integer> result = Utilities.readInfoMap(topic, startingPosition);
@@ -35,15 +33,14 @@ public class RunConsumer {
         List<Object> maps = Utilities.readBrokerConfig();
         IPMap ipMap = (IPMap) maps.get(0);
         PortMap portMap = (PortMap) maps.get(1);
-
         Consumer consumer;
+
         for (int i = 1; i <= ipMap.size(); i++){
             String brokerHostName = ipMap.getIpById(String.valueOf(i));
             int brokerPort =  Integer.parseInt(portMap.getPortById(String.valueOf(i)));
             // Connect to the consumer
             String brokerLocation = brokerHostName + ":" + brokerPort;
             consumer = new Consumer(brokerLocation, topic, startingPosition);
-
 
             int trackSize = -1;
             int lastSize = 0;

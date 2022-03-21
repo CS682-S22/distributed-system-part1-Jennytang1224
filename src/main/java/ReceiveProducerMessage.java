@@ -59,7 +59,7 @@ public class ReceiveProducerMessage implements Runnable{
             counterMap.put(topic, 1);
         }
         String key = d.getKey();
-        ByteString data = d.getKeyBytes();
+        ByteString data = d.getValue();
         int offset = d.getOffset();
 
         // calculate partitionID ba & brokerID sed on key

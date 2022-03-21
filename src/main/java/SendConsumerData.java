@@ -47,7 +47,6 @@ public class SendConsumerData implements Runnable{
             System.out.println("consumer partition map size with topic: " + topic + ": " + partitionMap.size());
 
             for (Map.Entry<Integer, CopyOnWriteArrayList<byte[]>> entry : partitionMap.entrySet()) {
-                System.out.println("partition: " + entry.getKey());
                 topicList = entry.getValue();
                 if (startingPosition >= topicList.size()) {
                     System.out.println("No new Data in partition: " + entry.getKey());

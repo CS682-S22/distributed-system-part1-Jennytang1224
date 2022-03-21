@@ -56,9 +56,6 @@ public class ReceiveProducerData implements Runnable{
                     partitionMap.get(partitionID).add(recordBytes);
                 } else { // if partitionID is not in topic, create a new inner map
                     topicList = new CopyOnWriteArrayList<>();
-                //    partitionMap = new HashMap<>();
-//                    topicList.add(recordBytes);
-//                    partitionMap.put(partitionID, topicList);
                     partitionMap.put(partitionID, topicList);
                     partitionMap.get(partitionID).add(recordBytes);
                 }
