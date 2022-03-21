@@ -55,4 +55,12 @@ public class IPMap {
         }
         return lst;
     }
+
+    public int size(){
+        int size = 0;
+        for(Map.Entry<String, String> entry: this.ipMap.entrySet()) {
+            size++;
+        }
+        return size;
+    }
 }

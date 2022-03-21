@@ -1,88 +1,67 @@
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.MessageInfo;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SendConsumerData implements Runnable{
-    Connection connection;
+    Connection consumerConnection;
     byte[] recordBytes;
-    Map<String, CopyOnWriteArrayList> topicMap;// <topic1: topic1_list, topic2: topic2_list>
+    static CopyOnWriteArrayList<byte[]> topicList;
+    static HashMap<Integer, CopyOnWriteArrayList<byte[]>> partitionMap;
+    HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;// <topic1: topic1_list, topic2: topic2_list>
     int startingPosition;
-    int newStartingPosition;
+    String topic;
+    HashMap<Integer, Connection> connMap;
 
-    public SendConsumerData(Connection connection, byte[] recordBytes,  Map<String, CopyOnWriteArrayList> topicMap ){
-        this.connection = connection;
+    public SendConsumerData(Connection consumerConnection, byte[] recordBytes, HashMap<String, HashMap<Integer,
+            CopyOnWriteArrayList<byte[]>>> topicMap, HashMap<Integer, Connection> connMap){
+        this.consumerConnection = consumerConnection;
         this.recordBytes = recordBytes;
         this.topicMap = topicMap;
+        this.connMap = connMap;
     }
 
     @Override
     public void run() {
-      //  while(true) {
-          //  System.out.println("size of passed in topic map: " + this.topicMap.size());
+  //  while(true) {
+      //  System.out.println("size of passed in topic map: " + this.topicMap.size());
+        MessageInfo.Message d = null;
+        try {
+            d = MessageInfo.Message.parseFrom(recordBytes);
+        } catch (InvalidProtocolBufferException e) {
+            e.printStackTrace();
+        }
+        topic = d.getTopic();
+        startingPosition = d.getOffset();
+        System.out.println("Consumer subscribed to: " + topic + ", at position: " + startingPosition);
 
-            MessageInfo.Message d = null;
-            try {
-                d = MessageInfo.Message.parseFrom(recordBytes);
-            } catch (InvalidProtocolBufferException e) {
-                e.printStackTrace();
-            }
-            String topic = d.getTopic();
-            startingPosition = d.getOffset();
-            System.out.println("Consumer subscribed to: " + topic + ", at position: " + startingPosition);
-            //offset to id
-            //   int id = Utilities.getIdByOffset(startingPosition, Utilities.offsetFilePath);
+        //in the hashmap, get the corresponding list of this topic
+        System.out.println("consumer topic map size: " + topicMap);
+        if (!topicMap.containsKey(topic)) {
+            System.out.println("No topic called '" + topic + "' in this broker!");
+        } else {
+            partitionMap = topicMap.get(topic);
+            System.out.println("consumer partition map size with topic: " + topic + ": " + partitionMap.size());
 
-            //in the hashmap, get the corresponding list of this topic
-            if (!topicMap.containsKey(topic)) {
-                System.out.println("No topic called '" + topic + "' in the broker!");
-            }
-            CopyOnWriteArrayList<byte[]> topicList = topicMap.get(topic);
-
-
-            if(startingPosition >= topicList.size()){ //
-                System.out.println("No new Data yet...");
-            }
-            else {
-                // start getting the all record from this topic
-                for (int i = startingPosition; i < topicList.size(); i++) {
-                    byte[] singleRecord = topicList.get(i);
-                    // send ALL record in this list to the consumer
-                    connection.send(singleRecord);
-                    System.out.println("A record has sent to the consumer");
+            for (Map.Entry<Integer, CopyOnWriteArrayList<byte[]>> entry : partitionMap.entrySet()) {
+                System.out.println("partition: " + entry.getKey());
+                topicList = entry.getValue();
+                if (startingPosition >= topicList.size()) {
+                    System.out.println("No new Data in partition: " + entry.getKey());
+                } else {
+                    // start getting the all record from this topic from starting position
+                    for (int i = startingPosition; i < topicList.size(); i++) {
+                        byte[] singleRecord = topicList.get(i);
+                        // send ALL record in this list to the consumer
+                        consumerConnection.send(singleRecord);
+                        System.out.println("A record has sent to the consumer");
+                    }
                 }
             }
-
-
-         //   int newStartingPosition = startingPosition;
-
-//            try {
-//                Thread.sleep(3000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-
-//
-//            int size = startingPosition + (topicList.size() - startingPosition);
-//            System.out.println("current starting position: " + startingPosition);
-//            System.out.println("size: " + size);
-//            newStartingPosition += size;
-//            System.out.println("new position: " + newStartingPosition);
-//
-//            Consumer consumer = new Consumer(connection, startingPosition);
-//            consumer.subscribe(topic, startingPosition);
-
-            notifyOtherBrokers();
+        }
   //      }
-        //notify other brokers to send their data related to this topic to the consumer
-
-
-    }
-
-
-    // broker1 will notify all other brokers to send this topic to the consumer
-    public static void notifyOtherBrokers(){
-
     }
 }

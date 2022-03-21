@@ -15,6 +15,8 @@ import java.util.Random;
 public class Utilities {
 
     static String HostConfigFileName = "src/config.json";
+    static String BrokerConfigFileName = "src/brokerConfig.json";
+    static String InfoFileName = "files/InfoMap";
     private static String hostname;
     static String offsetFilePath = "files/idMapOffset";
 
@@ -108,6 +110,81 @@ public class Utilities {
         return output;
     }
 
+
+
+    /**
+     * read config for host name and port
+     * @return an object contains maps
+     */
+    public static List<Object> readBrokerConfig(){
+        IPMap ipMap = new IPMap();
+        PortMap portMap = new PortMap();
+        HostInfo hostInfo;
+        List<Object> output = new ArrayList<>();
+        // read config.json to hostMap
+        Gson gson = new Gson();
+        String line;
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(Utilities.BrokerConfigFileName), StandardCharsets.ISO_8859_1))) {
+            while ((line = br.readLine()) != null) {
+                if ((!line.equals(""))) {
+                    try { //skip bad line
+                        hostInfo = gson.fromJson(line, HostInfo.class);
+                        ipMap.put(hostInfo.getHost_id(), hostInfo.getIp_address());
+                        portMap.put(hostInfo.getHost_id(), hostInfo.getPort_number());
+
+                    } catch (JsonSyntaxException e) {
+                        System.out.println("skip a bad line...");
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("fail to read the file");
+            e.printStackTrace();
+        }
+        output.add(ipMap);
+        output.add(portMap);
+        return output;
+    }
+
+    /**
+     * read config for host name and port
+     * @return an object contains maps
+     */
+    public static List<Integer> readInfoMap(String topic, int startingPosition){
+        List<Integer> output = new ArrayList<>();
+        String line;
+        int brokerID = -1;
+        int partitionID = -1;
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(Utilities.InfoFileName), StandardCharsets.ISO_8859_1))) {
+            while ((line = br.readLine()) != null) {
+                if ((!line.equals(""))) {
+                    try { //skip bad line
+                        String[] splitLine = line.split(",");
+                        if (splitLine[0].equalsIgnoreCase(String.valueOf(startingPosition))){
+                           if(splitLine[2].equalsIgnoreCase(topic)){
+                               brokerID = Integer.parseInt(splitLine[4]);
+                               partitionID = Integer.parseInt(splitLine[3]);
+                               output.add(brokerID);
+                               output.add(partitionID);
+                               return output;
+                           }
+                        }
+                    } catch (JsonSyntaxException e) {
+                        System.out.println("skip a bad line...");
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("fail to read the file");
+            e.printStackTrace();
+        }
+        return output;
+    }
+
+
+
+
+
     public static int getBytesOffsetById(int id, String offsetFilePath){
         // id,offset
         int offset;
@@ -145,5 +222,22 @@ public class Utilities {
         }
         return -1;
     }
+
+    public static int hashKey(String key){
+        return key.hashCode();
+    }
+
+    public static int CalculatePartition(String key, int numOfPartitions){
+        int hashCode = hashKey(key);
+        return hashCode % numOfPartitions + 1; // partition starts with 1
+    }
+
+    public static int CalculateBroker(int partition, int numOfBrokers){
+      //  return partition % numOfBrokers; // broker starts with 1
+            Random randomGenerator = new Random();
+            return randomGenerator.nextInt(numOfBrokers) + 1;
+
+    }
+
 
 }

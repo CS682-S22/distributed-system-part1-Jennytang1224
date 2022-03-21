@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.List;
 
 public class RunConsumer {
     public static void main(String[] args) throws IOException {
@@ -15,7 +16,7 @@ public class RunConsumer {
 //         Specify the location of the broker, topic of interest for this specific
 //         consumer object, and a starting position in the message stream.
 
-        String brokerLocation = args[0];
+        String LBLocation = args[0];
         String topic = args[1];
         int startingPosition = Integer.parseInt(args[2]);
 
@@ -23,11 +24,56 @@ public class RunConsumer {
 //          int startingPosition = 0;
 //          String topic = "image";
 
-        // Connect to the consumer
-
-        Consumer consumer = new Consumer(brokerLocation, topic, startingPosition);
 
 
+        //based on info map, find the partition with the starting position
+//        List<Integer> result = Utilities.readInfoMap(topic, startingPosition);
+//        int brokerID = result.get(0);
+//        int partitionID = result.get(1);
+        // use brokerID to get connection and use connection
+
+        List<Object> maps = Utilities.readBrokerConfig();
+        IPMap ipMap = (IPMap) maps.get(0);
+        PortMap portMap = (PortMap) maps.get(1);
+
+        Consumer consumer;
+        for (int i = 1; i <= ipMap.size(); i++){
+            String brokerHostName = ipMap.getIpById(String.valueOf(i));
+            int brokerPort =  Integer.parseInt(portMap.getPortById(String.valueOf(i)));
+            // Connect to the consumer
+            String brokerLocation = brokerHostName + ":" + brokerPort;
+            consumer = new Consumer(brokerLocation, topic, startingPosition);
+
+
+            int trackSize = -1;
+            int lastSize = 0;
+
+            while(true) {
+                int sizeSavedToBq = consumer.getPositionCounter();
+//            System.out.println("sizeSavedToBq: " + sizeSavedToBq);
+                if(sizeSavedToBq != trackSize) {
+                    startingPosition += sizeSavedToBq;
+                    startingPosition -= lastSize;
+                    lastSize = sizeSavedToBq;
+                }
+                else{
+                    startingPosition += 0;
+                }
+                consumer.subscribe(topic, startingPosition);
+                try { // every 3 sec request new data
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                trackSize = sizeSavedToBq;
+                System.out.println("\n");
+
+            }
+        }
+
+
+
+//
 //        int offset = Utilities.getBytesOffsetById(startingPosition, Utilities.offsetFilePath);
 //        System.out.println("offset: " + offset);
 //        if(offset == -1){ // cant find the id
@@ -35,30 +81,8 @@ public class RunConsumer {
 //            System.exit(-1);
 //        }
 
-        int trackSize = -1;
-        int lastSize = 0;
 
-        while(true) {
-            int sizeSavedToBq = consumer.getPositionCounter();
-//            System.out.println("sizeSavedToBq: " + sizeSavedToBq);
-            if(sizeSavedToBq != trackSize) {
-                startingPosition += sizeSavedToBq;
-                startingPosition -= lastSize;
-                lastSize = sizeSavedToBq;
-            }
-            else{
-                startingPosition += 0;
-            }
-            consumer.subscribe(topic, startingPosition);
-            try { // every 3 sec request new data
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            trackSize = sizeSavedToBq;
-            System.out.println("\n");
 
-        }
 
 
         // Continue to pull messages...forever

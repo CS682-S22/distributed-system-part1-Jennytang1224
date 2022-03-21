@@ -4,23 +4,27 @@ import dsd.pubsub.protos.MessageInfo;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ReceiveProducerData implements Runnable{
-    static Connection connection;
     byte[] recordBytes;
-    private Map<String, CopyOnWriteArrayList> topicMap;// <topic1: topic1_list, topic2: topic2_list>
-    private String outputPath = "files/idMapOffset";
-    private int messageCounter;
-    private int offsetInMem;
+    // topicMap = {image:<p1:list; p2:list>; product: <p1:list>}
+    private HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
 
-    public ReceiveProducerData(Connection connection, byte[] recordBytes, Map<String, CopyOnWriteArrayList> topicMap, int messageCounter, int offsetInMem) {
-        this.connection = connection;
+    //    private String outputPath = "files/InfoMap";
+//    private int messageCounter;
+//    private int offsetInMem;
+    static CopyOnWriteArrayList<byte[]> topicList;
+    static HashMap<Integer, CopyOnWriteArrayList<byte[]>> partitionMap;
+
+    public ReceiveProducerData(byte[] recordBytes, HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap,
+                               int messageCounter, int offsetInMem) {
         this.recordBytes = recordBytes;
         this.topicMap = topicMap;
-        this.messageCounter = messageCounter;
-        this.offsetInMem = offsetInMem;
+//        this.messageCounter = messageCounter;
+//        this.offsetInMem = offsetInMem;
     }
 
     @Override
@@ -32,33 +36,44 @@ public class ReceiveProducerData implements Runnable{
             e.printStackTrace();
         }
         String topic = d.getTopic();
+        int partitionID = d.getPartition();
+        System.out.println(partitionID);
+        // save msgs to the maps based on topics and partitions:
         //   if(running) {
-        if(topicMap.containsKey(topic)){ //if key is in map
-            topicMap.get(topic).add(recordBytes);
-        }
-        else{ //if key is not in the map, create CopyOnWriteArrayList and add first record
-            CopyOnWriteArrayList newList = new CopyOnWriteArrayList<>();
-            newList.add(recordBytes);
-            topicMap.put(topic, newList);
-        }
-        // save intermediate data msg id, offset of bytes
-        String line;
-        if(this.messageCounter == 0){
-            line = this.messageCounter + "," + 0;
-        } else {
-            offsetInMem += d.getOffset();
-            line = this.messageCounter + "," + offsetInMem;
-        }
-        this.messageCounter++;
-        byte[] arr = line.getBytes(StandardCharsets.UTF_8);
-        try {
-            writeBytesToFile(outputPath, arr);
-        } catch (IOException e) {
-            e.printStackTrace();
+
+        if(this.topicMap != null && this.topicMap.size() == 0) {
+            topicList = new CopyOnWriteArrayList<>();
+            partitionMap = new HashMap<>();
+            topicList.add(recordBytes);
+            partitionMap.put(partitionID, topicList);
+            this.topicMap.put(topic, partitionMap);
+            System.out.println(" ->>> saved first record");
+
+        }else{ // if topic map is null
+            if (this.topicMap.containsKey(topic)) { //if topic is in map
+                partitionMap = topicMap.get(topic);
+                if (partitionMap.containsKey(partitionID)) { // if partitionID is in topic, add
+                    partitionMap.get(partitionID).add(recordBytes);
+                } else { // if partitionID is not in topic, create a new inner map
+                    topicList = new CopyOnWriteArrayList<>();
+                //    partitionMap = new HashMap<>();
+//                    topicList.add(recordBytes);
+//                    partitionMap.put(partitionID, topicList);
+                    partitionMap.put(partitionID, topicList);
+                    partitionMap.get(partitionID).add(recordBytes);
+                }
+            } else { //if topic is not in the map, create a new inner hashmap and add first record
+                topicList = new CopyOnWriteArrayList<>();
+                partitionMap = new HashMap<>();
+                topicList.add(recordBytes);
+                partitionMap.put(partitionID, topicList);
+                this.topicMap.put(topic, partitionMap);
+            }
+            System.out.println(" -> saved to topicMap");
         }
 
         //   }
-    //    System.out.println("topic map size: " + topicMap.size());
+       System.out.println("topic map: " + topicMap);
 
     }
 
