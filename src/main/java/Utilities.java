@@ -19,6 +19,7 @@ public class Utilities {
     static String InfoFileName = "files/InfoMap";
     private static String hostname;
     static String offsetFilePath = "files/idMapOffset";
+    static int numOfBrokersInSys = 5;
 
     /**
      * get computer host name
@@ -229,7 +230,7 @@ public class Utilities {
 
     public static int CalculatePartition(String key, int numOfPartitions){
         int hashCode = hashKey(key);
-        return hashCode % numOfPartitions + 1; // partition starts with 1
+        return Math.abs(hashCode % numOfPartitions + 1); // partition starts with 1
     }
 
     public static int CalculateBroker(int partition, int numOfBrokers){
@@ -239,5 +240,30 @@ public class Utilities {
 
     }
 
+    public static int getBrokerIDFromFile(String brokerHostName, String brokerPort){
+        String line;
+        int brokerID = -1;
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(Utilities.BrokerConfigFileName), StandardCharsets.ISO_8859_1))) {
+            while ((line = br.readLine()) != null) {
+                if ((!line.equals(""))) {
+                    try { //skip bad line
 
+                        String[] splitLine = line.replace("\"", "").replace("}", "").replace(" ", "").split(",");
+                        if (splitLine[1].split(":")[1].equalsIgnoreCase(brokerHostName)){
+                            if(splitLine[2].split(":")[1].equalsIgnoreCase(brokerPort)){
+                                brokerID = Integer.parseInt(splitLine[0].split(":")[1]);
+                                return brokerID;
+                            }
+                        }
+                    } catch (JsonSyntaxException e) {
+                        System.out.println("skip a bad line...");
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("fail to read the file");
+            e.printStackTrace();
+        }
+        return brokerID;
+    }
 }
