@@ -37,16 +37,12 @@ public class RunConsumer {
         Consumer consumer = null;
         int requestCounter = 0;
         int start = 0;
-        int receiveCounter = 1;
+        int receiveCounter = 0;
         int max = 0;
-
-
 
         while(true) {
             for (int i = 1; i <= Utilities.numOfBrokersInSys; i++){ // loop though num of brokers
                 // Connect to the consumer
-
-
                 System.out.println("Starting position: " + startingPosition);
                 String brokerHostName = ipMap.getIpById(String.valueOf(i));
                 int brokerPort =  Integer.parseInt(portMap.getPortById(String.valueOf(i)));
@@ -66,10 +62,18 @@ public class RunConsumer {
 //                    startingPosition += 0;
 //                }
                 // everytime get to one broker, check max
+
                 if(consumer.getMaxPosition() >= max){
                     max = consumer.getMaxPosition();
                 }
-                receiveCounter = consumer.getReceiverCounter();
+
+                System.out.println(startingPosition);
+                System.out.println(consumer.getReceiverCounter());
+                if(requestCounter == 0) {
+                    receiveCounter = startingPosition - 1 + consumer.getReceiverCounter();
+                }else{
+                    receiveCounter = consumer.getReceiverCounter() + 1;
+                }
                 System.out.println("max: " + max + ", receiverCounter: " + receiveCounter);
                 if(max - start == receiveCounter){ // get through all brokers
                     if(requestCounter != 0) { // not first time
@@ -100,8 +104,6 @@ public class RunConsumer {
                 } // else if first time, will use input starting position
             }
             // else -> keep same counter and go to for loop again
-
-
 
         }
 

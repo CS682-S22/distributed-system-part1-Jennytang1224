@@ -20,7 +20,7 @@ public class Consumer {
     private DataOutputStream output;
     private Connection connection;
     private static String outputPath;
-    static int receiverCounter = 1;
+    static int receiverCounter = 0;
     Receiver newReceiver;
     static int maxPosition = 0;
 
