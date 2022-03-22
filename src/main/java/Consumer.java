@@ -20,7 +20,7 @@ public class Consumer {
     private DataOutputStream output;
     private Connection connection;
     private static String outputPath;
-    static int receiverCounter = 0;
+
     Receiver newReceiver;
     static int maxPosition = 0;
 
@@ -95,7 +95,7 @@ public class Consumer {
     }
 
     public int getReceiverCounter(){
-        return receiverCounter;
+        return newReceiver.receiverCounter;
     }
 
     /**
@@ -109,6 +109,7 @@ public class Consumer {
         private CS601BlockingQueue<MessageInfo.Message> bq;
         private ExecutorService executor;
         int positionCounter;
+        static int receiverCounter = 0;
 
 
         public Receiver(String name, int port, Connection conn) {
@@ -122,6 +123,9 @@ public class Consumer {
 
         public int getPositionCounter(){
             return positionCounter;
+        }
+        public int receiverCounter(){
+            return receiverCounter;
         }
 
         @Override

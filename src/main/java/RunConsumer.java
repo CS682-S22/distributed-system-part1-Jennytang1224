@@ -37,13 +37,15 @@ public class RunConsumer {
         Consumer consumer = null;
         int requestCounter = 0;
         int start = 0;
-        int receiveCounter = 0;
+
         int max = 0;
+        int receiveCounter = 0;
 
         while(true) {
+
             for (int i = 1; i <= Utilities.numOfBrokersInSys; i++){ // loop though num of brokers
                 // Connect to the consumer
-                System.out.println("Starting position: " + startingPosition);
+                System.out.println("\nStarting position: " + startingPosition);
                 String brokerHostName = ipMap.getIpById(String.valueOf(i));
                 int brokerPort =  Integer.parseInt(portMap.getPortById(String.valueOf(i)));
                 String brokerLocation = brokerHostName + ":" + brokerPort;
@@ -61,18 +63,18 @@ public class RunConsumer {
 //                else{
 //                    startingPosition += 0;
 //                }
-                // everytime get to one broker, check max
 
-                if(consumer.getMaxPosition() >= max){
-                    max = consumer.getMaxPosition();
-                }
 
                 System.out.println(startingPosition);
                 System.out.println(consumer.getReceiverCounter());
                 if(requestCounter == 0) {
-                    receiveCounter = startingPosition - 1 + consumer.getReceiverCounter();
+                    receiveCounter = consumer.getReceiverCounter() + startingPosition - 1;
                 }else{
-                    receiveCounter += startingPosition - 1;
+                    receiveCounter = consumer.getReceiverCounter() - receiveCounter + 1 + receiveCounter;
+                }
+
+                if(consumer.getMaxPosition() >= max){
+                    max = consumer.getMaxPosition();
                 }
                 System.out.println("max: " + max + ", receiverCounter: " + receiveCounter);
                 if(max - start == receiveCounter){ // get through all brokers
@@ -80,12 +82,17 @@ public class RunConsumer {
                         startingPosition = max + 1;
                     } // else if first time, will use input starting position
                 }
+
                 consumer.subscribe(topic, startingPosition);
+               // System.out.println(consumer.getReceiverCounter());
+                // everytime get to one broker, check max
+
+
             //    System.out.println("tracksize: " + trackSize);
              //   trackSize = sizeSavedToBq;
 
                 try { // every 3 sec request new data
-                    Thread.sleep(3000);
+                    Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
