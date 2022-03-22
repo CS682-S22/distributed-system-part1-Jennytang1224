@@ -20,11 +20,11 @@ public class RunBroker {
         IPMap ipMap = (IPMap) maps.get(0);
         PortMap portMap = (PortMap) maps.get(1);
 
-        String brokerHostName = "Jennys-MacBook-Pro.local";
-        int brokerPort = 1420;
+//        String brokerHostName = "Jennys-MacBook-Pro.local";
+//        int brokerPort = 1420;
 
-       // String brokerHostName = Utilities.getHostName();
-       // int brokerPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(brokerHostName)));
+        String brokerHostName = Utilities.getHostName();
+        int brokerPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(brokerHostName)));
         DistributedBroker broker = new DistributedBroker(brokerHostName, brokerPort);
         try {
             broker.run();
