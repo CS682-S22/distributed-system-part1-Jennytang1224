@@ -4,6 +4,7 @@ import dsd.pubsub.protos.PeerInfo;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,12 +20,10 @@ public class Consumer {
     private DataOutputStream output;
     private Connection connection;
     private static String outputPath;
-    static Server server;
-    static int peerPort;
-    static String peerHostName;
-    static int receiverCounter = 0;
+    static int receiverCounter = 1;
     Receiver newReceiver;
-    static int maxPosition = -1;
+    static int maxPosition = 0;
+
 
 
     public Consumer(String brokerLocation, String topic, int startingPosition) {
@@ -44,7 +43,7 @@ public class Consumer {
            // e.printStackTrace();
         }
 
-        System.out.println("this consumer is connecting to broker " + brokerLocation);
+        System.out.println("\n*** this consumer is connecting to broker " + brokerLocation + " ***");
         // draft peerinfo
         String type = "consumer";
         List<Object> maps = Utilities.readConfig();
@@ -95,6 +94,9 @@ public class Consumer {
         return maxPosition;
     }
 
+    public int getReceiverCounter(){
+        return receiverCounter;
+    }
 
     /**
      * inner class Receiver
@@ -130,12 +132,13 @@ public class Consumer {
                 if (result != null) {
                     try {
                         bq.put(MessageInfo.Message.parseFrom(result));
+                        receiverCounter++;
                         int id = MessageInfo.Message.parseFrom(result).getOffset();
                         if(id >= maxPosition){
                             maxPosition = id;
                         }
-                        positionCounter++;
-                        System.out.println("Consumer added a record to the blocking queue...");
+                      //  positionCounter++;
+                        System.out.println(" ---> Consumer added a record to the blocking queue...");
                     } catch (InvalidProtocolBufferException e) {
                         e.printStackTrace();
                     }

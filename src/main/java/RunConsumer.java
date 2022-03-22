@@ -36,15 +36,21 @@ public class RunConsumer {
         PortMap portMap = (PortMap) maps.get(1);
         Consumer consumer = null;
         int requestCounter = 0;
+        int start = 0;
+        int receiveCounter = 1;
+        int max = 0;
+
+
 
         while(true) {
-
             for (int i = 1; i <= Utilities.numOfBrokersInSys; i++){ // loop though num of brokers
                 // Connect to the consumer
+
+
+                System.out.println("Starting position: " + startingPosition);
                 String brokerHostName = ipMap.getIpById(String.valueOf(i));
                 int brokerPort =  Integer.parseInt(portMap.getPortById(String.valueOf(i)));
                 String brokerLocation = brokerHostName + ":" + brokerPort;
-                System.out.println("brokerlocation: " + brokerLocation);
     //        String brokerLocation = "Jennys-MacBook-Pro.local:1420" ;
                 consumer = new Consumer(brokerLocation, topic, startingPosition);
              //   int trackSize = -1;
@@ -59,22 +65,43 @@ public class RunConsumer {
 //                else{
 //                    startingPosition += 0;
 //                }
-
-                System.out.println("starting position: " + startingPosition);
+                // everytime get to one broker, check max
+                if(consumer.getMaxPosition() >= max){
+                    max = consumer.getMaxPosition();
+                }
+                receiveCounter = consumer.getReceiverCounter();
+                System.out.println("max: " + max + ", receiverCounter: " + receiveCounter);
+                if(max - start == receiveCounter){ // get through all brokers
+                    if(requestCounter != 0) { // not first time
+                        startingPosition = max + 1;
+                    } // else if first time, will use input starting position
+                }
                 consumer.subscribe(topic, startingPosition);
+            //    System.out.println("tracksize: " + trackSize);
+             //   trackSize = sizeSavedToBq;
+
                 try { // every 3 sec request new data
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            //    System.out.println("tracksize: " + trackSize);
-             //   trackSize = sizeSavedToBq;
-                System.out.println("\n");
             }
             requestCounter++;
-            if(requestCounter != 0) { // not first time
-                startingPosition = consumer.getMaxPosition() + 1;
-            } // else if first time, will use input starting postion
+            //after iterating through num of brokers,
+            // if max = counter -> increment starting position
+         //   int max = consumer.getMaxPosition();
+          //  int receiveCounter = consumer.getReceiverCounter();
+            System.out.println("outside for loop: " + "max: " + max + ", receiverCounter: " + receiveCounter);
+            if(max - start != receiveCounter){ // miss brokers -> no increment on starting position
+
+            }else{
+                if(requestCounter != 0) { // not first time
+                    startingPosition = max + 1;
+                } // else if first time, will use input starting position
+            }
+            // else -> keep same counter and go to for loop again
+
+
 
         }
 

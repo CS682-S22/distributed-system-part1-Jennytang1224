@@ -28,7 +28,6 @@ public class ReceiveProducerData implements Runnable{
         this.recordBytes = recordBytes;
         this.topicMapList = topicMapList;
         this.brokerID = brokerID;
-        System.out.println("BROKER ID: " + brokerID);
 
 //        this.messageCounter = messageCounter;
 //        this.offsetInMem = offsetInMem;
@@ -46,8 +45,6 @@ public class ReceiveProducerData implements Runnable{
     public void run(){
         // get correct topicMap by brokerID
         topicMap = topicMapList.get(brokerID-1);
-        System.out.println("size of list: " + topicMapList.size());
-
         MessageInfo.Message d = null;
         try {
             d = MessageInfo.Message.parseFrom(recordBytes);
@@ -57,7 +54,6 @@ public class ReceiveProducerData implements Runnable{
         String topic = d.getTopic();
         int count = d.getOffset();
         int partitionID = d.getPartition();
-        System.out.println(partitionID);
         // save msgs to the maps based on topics and partitions:
         //   if(running) {
        // Set<Object> record = new HashSet<>();

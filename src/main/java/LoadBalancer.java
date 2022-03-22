@@ -57,18 +57,18 @@ public class LoadBalancer {
             PortMap portMap = (PortMap) maps.get(1);
             String brokerHostName = ipMap.getIpById(String.valueOf(brokerCounter));
             int brokerPort =  Integer.parseInt(portMap.getPortById(String.valueOf(brokerCounter)));
-            DistributedBroker broker = new DistributedBroker(brokerHostName, brokerPort);
-            try {
-                broker.run();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+//            DistributedBroker broker = new DistributedBroker(brokerHostName, brokerPort);
+//            try {
+//                broker.run();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
             // create a connection to the broker
             try {
                 this.socket = new Socket(brokerHostName, brokerPort);
                 connection = new Connection(this.socket);
                 connMap.put(brokerCounter, connection);
-//                System.out.println("save broker " + brokerCounter + " connection to map");
+                System.out.println("Connected to broker: " + brokerHostName + ":" + brokerPort);
                 this.input = new DataInputStream(new BufferedInputStream(this.socket.getInputStream()));
                 this.output = new DataOutputStream(new BufferedOutputStream(this.socket.getOutputStream()));
             } catch (IOException e) {

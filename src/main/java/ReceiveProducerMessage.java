@@ -88,7 +88,7 @@ public class ReceiveProducerMessage implements Runnable{
                 .build();
 
         Connection connection = connMap.get(brokerID);
-        System.out.println(connection);
+      //  System.out.println(connection);
         connection.send(record.toByteArray());
         System.out.println("Message has been sent to the assigned BROKER: " + brokerID + ", PARTITION: " + partitionID);
 
