@@ -25,6 +25,8 @@ public class RunBroker {
 
         String brokerHostName = Utilities.getHostName();
         int brokerPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(brokerHostName)));
+        System.out.println(brokerHostName);
+        System.out.println(brokerPort);
         DistributedBroker broker = new DistributedBroker(brokerHostName, brokerPort);
         try {
             broker.run();
