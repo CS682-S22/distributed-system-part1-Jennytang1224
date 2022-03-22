@@ -40,6 +40,7 @@ public class RunConsumer {
 
         int max = 0;
         int receiveCounter = 0;
+        int lastReceivedCounter = 0;
 
         while(true) {
 
@@ -67,10 +68,11 @@ public class RunConsumer {
 
                 System.out.println(startingPosition);
                 System.out.println(consumer.getReceiverCounter());
+                System.out.println(lastReceivedCounter);
                 if(requestCounter == 0) {
                     receiveCounter = consumer.getReceiverCounter() + startingPosition - 1;
                 }else{
-                    receiveCounter = consumer.getReceiverCounter() - receiveCounter + 1 + receiveCounter;
+                    receiveCounter += (consumer.getReceiverCounter() - lastReceivedCounter);
                 }
 
                 if(consumer.getMaxPosition() >= max){
@@ -86,6 +88,7 @@ public class RunConsumer {
                 consumer.subscribe(topic, startingPosition);
                // System.out.println(consumer.getReceiverCounter());
                 // everytime get to one broker, check max
+                lastReceivedCounter = consumer.getReceiverCounter();
 
 
             //    System.out.println("tracksize: " + trackSize);
