@@ -72,7 +72,7 @@ public class RunConsumer {
                 if(requestCounter == 0) {
                     receiveCounter = startingPosition - 1 + consumer.getReceiverCounter();
                 }else{
-                    receiveCounter = consumer.getReceiverCounter() + 1;
+                    receiveCounter = startingPosition - 1;
                 }
                 System.out.println("max: " + max + ", receiverCounter: " + receiveCounter);
                 if(max - start == receiveCounter){ // get through all brokers
