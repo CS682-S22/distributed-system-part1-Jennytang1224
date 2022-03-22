@@ -58,6 +58,15 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>broker</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>RunBroker</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>producer</id>
                         <goals>
                             <goal>java</goal>
