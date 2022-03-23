@@ -34,9 +34,7 @@ public class RunConsumer {
                 int brokerPort =  Integer.parseInt(portMap.getPortById(String.valueOf(i)));
                 String brokerLocation = brokerHostName + ":" + brokerPort;
                 consumer = new Consumer(brokerLocation, topic, startingPosition);
-                System.out.println(startingPosition);
-                System.out.println(consumer.getReceiverCounter());
-                System.out.println(lastReceivedCounter);
+
                 if(requestCounter == 0) {
                     receiveCounter = consumer.getReceiverCounter() + startingPosition - 1;
                 }else{

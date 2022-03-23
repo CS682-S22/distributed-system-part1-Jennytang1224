@@ -64,7 +64,7 @@ public class ReceiveProducerData implements Runnable{
             }
             System.out.println(" -> saved to topicMap");
         }
-       System.out.println("broker " + brokerID + ": topic map: " + topicMap);
+     //  System.out.println("broker " + brokerID + ": topic map: " + topicMap);
     }
 
 }
