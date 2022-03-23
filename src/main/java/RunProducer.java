@@ -1,11 +1,8 @@
 import com.google.protobuf.ByteString;
 import dsd.pubsub.protos.MessageInfo;
-
-import javax.sound.sampled.AudioFormat;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,14 +25,9 @@ public class RunProducer {
 
         String brokerLocation = args[0];
         String filepath = args[1];
-
-//        String brokerLocation = "Jennys-MacBook-Pro.local:1431";
-//        String filepath = "files/access_test.log";
-
         // Open a connection to the Broker by creating a new Producer object
         // send producer identity to broker
         Producer producer = new Producer(brokerLocation);
-
         // for each data record, send topic, key and data
         ByteString data = null;
         String topic;
@@ -60,9 +52,8 @@ public class RunProducer {
                     System.out.println(key);
                     if (key.length() < 10) { // sanity check
                         // build protobuffer
-                        offset = data.size();
+                        offset = data.size(); // increase by offset
                         System.out.println("set offset: " + offset);
-                        // offset += 1; // monotonically increasing
                         MessageInfo.Message record = MessageInfo.Message.newBuilder()
                                 .setTopic(topic)
                                 .setKey(key)
@@ -80,10 +71,5 @@ public class RunProducer {
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
         }
-
-
-        // Close the connection
-        producer.close();
-
     }
 }

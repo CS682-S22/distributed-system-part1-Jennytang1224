@@ -4,7 +4,6 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -27,7 +26,6 @@ public class Utilities {
     public static String getHostName(){
         try {
             hostname = InetAddress.getLocalHost().getHostName();
-            //System.out.println("Hostname : " + hostname);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }

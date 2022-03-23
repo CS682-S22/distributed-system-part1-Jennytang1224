@@ -1,50 +1,33 @@
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.MessageInfo;
-
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ReceiveProducerData implements Runnable{
     byte[] recordBytes;
-    // topicMap = {image:<p1:list; p2:list>; product: <p1:list>}
     private List<HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>>> topicMapList;
-
-    //    private String outputPath = "files/InfoMap";
-//    private int messageCounter;
-//    private int offsetInMem;
     static CopyOnWriteArrayList<byte[]> topicList;
     static HashMap<Integer, CopyOnWriteArrayList<byte[]>> partitionMap;
     int brokerID;
     HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
 
 
-
-
-    public ReceiveProducerData(byte[] recordBytes, List<HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>>> topicMapList,
-                               int messageCounter, int offsetInMem, int brokerID) {
+    public ReceiveProducerData(byte[] recordBytes, List<HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>>> topicMapList, int brokerID) {
         this.recordBytes = recordBytes;
         this.topicMapList = topicMapList;
         this.brokerID = brokerID;
-
-//        this.messageCounter = messageCounter;
-//        this.offsetInMem = offsetInMem;
 
         if(topicMapList.size() == 0){
             for (int i = 0; i < 5; i++) {
                 topicMapList.add(i, new HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>>());
             }
         }
-
-
     }
 
     @Override
     public void run(){
         // get correct topicMap by brokerID
-        topicMap = topicMapList.get(brokerID-1);
+        topicMap = topicMapList.get(brokerID - 1);
         MessageInfo.Message d = null;
         try {
             d = MessageInfo.Message.parseFrom(recordBytes);
@@ -52,13 +35,7 @@ public class ReceiveProducerData implements Runnable{
             e.printStackTrace();
         }
         String topic = d.getTopic();
-        int count = d.getOffset();
         int partitionID = d.getPartition();
-        // save msgs to the maps based on topics and partitions:
-        //   if(running) {
-       // Set<Object> record = new HashSet<>();
-//        record.add(count);
-//        record.add(recordBytes);
 
         if(this.topicMap != null && this.topicMap.size() == 0) {
             topicList = new CopyOnWriteArrayList<>();
@@ -87,27 +64,7 @@ public class ReceiveProducerData implements Runnable{
             }
             System.out.println(" -> saved to topicMap");
         }
-
-        //   }
        System.out.println("broker " + brokerID + ": topic map: " + topicMap);
-
     }
-
-    /**
-     * write bytes to files
-     */
-    private static void writeBytesToFile(String fileOutput, byte[] buf)
-            throws IOException {
-        try (FileOutputStream fos = new FileOutputStream(fileOutput, true)) {
-            System.out.println("Producer sends offset data to the disk...");
-            fos.write(buf);
-            fos.write(10); //newline
-            fos.flush();
-        }
-        catch(IOException e){
-            System.out.println("file writing error :(");
-        }
-    }
-
 
 }

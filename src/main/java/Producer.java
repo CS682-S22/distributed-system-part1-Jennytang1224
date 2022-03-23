@@ -47,16 +47,6 @@ public class Producer {
     }
 
 
-    public Producer(Socket socket){
-        this.socket = socket;
-        try  {
-            this.input = new DataInputStream(new BufferedInputStream(this.socket.getInputStream()));
-            this.output = new DataOutputStream(new BufferedOutputStream(this.socket.getOutputStream()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     /**
      * implement sender interface
      * @return if send successfully
@@ -79,11 +69,6 @@ public class Producer {
             e.printStackTrace();
         }
     }
-
-    public void close(){
-
-    }
-
 
 
 }

@@ -1,10 +1,8 @@
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.MessageInfo;
 import dsd.pubsub.protos.PeerInfo;
-
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,11 +18,8 @@ public class Consumer {
     private DataOutputStream output;
     private Connection connection;
     private static String outputPath;
-
     Receiver newReceiver;
     static int maxPosition = 0;
-
-
 
     public Consumer(String brokerLocation, String topic, int startingPosition) {
         this.brokerLocation = brokerLocation;
@@ -40,7 +35,7 @@ public class Consumer {
             this.input = new DataInputStream(new BufferedInputStream(this.socket.getInputStream()));
             this.output = new DataOutputStream(new BufferedOutputStream(this.socket.getOutputStream()));
         } catch (IOException e) {
-           // e.printStackTrace();
+            e.printStackTrace();
         }
 
         System.out.println("\n*** this consumer is connecting to broker " + brokerLocation + " ***");
@@ -71,7 +66,6 @@ public class Consumer {
     }
 
 
-
     // send request to broker
     public void subscribe(String topic, int startingPosition){
         System.out.println("... Requesting topic: " + topic + " starting at position: " + startingPosition + "...");
@@ -79,7 +73,6 @@ public class Consumer {
                 .setTopic(topic)
                 .setOffset(startingPosition)
                 .build();
-        //writeToSocket(request.toByteArray());
         if(connection == null) {
             return;
         }
@@ -116,7 +109,7 @@ public class Consumer {
             this.name = name;
             this.port = port;
             this.conn = conn;
-            this.bq = new CS601BlockingQueue<>(3);
+            this.bq = new CS601BlockingQueue<>(100);
             this.executor = Executors.newSingleThreadExecutor();
             this.positionCounter = 0;
         }
@@ -124,6 +117,7 @@ public class Consumer {
         public int getPositionCounter(){
             return positionCounter;
         }
+
         public int receiverCounter(){
             return receiverCounter;
         }
@@ -141,7 +135,6 @@ public class Consumer {
                         if(id >= maxPosition){
                             maxPosition = id;
                         }
-                      //  positionCounter++;
                         System.out.println(" ---> Consumer added a record to the blocking queue...");
                     } catch (InvalidProtocolBufferException e) {
                         e.printStackTrace();
@@ -187,20 +180,5 @@ public class Consumer {
         catch(IOException e){
             System.out.println("file writing error :(");
         }
-    }
-
-    public void writeToSocket(byte[] message){
-        try {
-            this.output.writeInt(message.length);
-            this.output.write(message);
-            this.output.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    public void close(){
-
     }
 }

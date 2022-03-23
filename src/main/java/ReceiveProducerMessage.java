@@ -1,31 +1,22 @@
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.MessageInfo;
-
 import java.io.*;
-import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ReceiveProducerMessage implements Runnable{
     byte[] recordBytes;
-    private String offsetOutputPath = "files/idMapOffset";
-    private String infoOutputPath = "files/InfoMap";
+    private String offsetOutputPath = Utilities.offsetFilePath;
+    private String infoOutputPath = Utilities.InfoFileName;
     private int messageCounter;
     private int offsetInMem;
     int numOfBrokers;
     int numOfPartitions;
-    Socket socket = null;
-    private DataInputStream input;
-    private DataOutputStream output;
-    String brokerHostName;
-    int brokerPort;
     HashMap<Integer, Connection> connMap;
     HashMap<String, Integer> counterMap;
-    static HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;// <topic1: topic1_list, topic2: topic2_list>
-
-
+    static HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
 
     public ReceiveProducerMessage( byte[] recordBytes, int messageCounter,
                                    int offsetInMem, int numOfBrokers, int numOfPartitions, HashMap<Integer, Connection> connMap, HashMap<String, Integer> counterMap) {
@@ -60,12 +51,10 @@ public class ReceiveProducerMessage implements Runnable{
         }
         String key = d.getKey();
         ByteString data = d.getValue();
-        int offset = d.getOffset();
 
         // calculate partitionID ba & brokerID sed on key
         int partitionID = Utilities.CalculatePartition(key, numOfPartitions);
         int brokerID = Utilities.CalculateBroker(partitionID, numOfBrokers);
-
 
         // save intermediate file:  msgID, key, topic, partitionID, BrokerID
         String line;
@@ -88,10 +77,8 @@ public class ReceiveProducerMessage implements Runnable{
                 .build();
 
         Connection connection = connMap.get(brokerID);
-      //  System.out.println(connection);
         connection.send(record.toByteArray());
         System.out.println("Message has been sent to the assigned BROKER: " + brokerID + ", PARTITION: " + partitionID);
-
 
         // save intermediate data msg id, offset of bytes
         String line1;
@@ -125,7 +112,5 @@ public class ReceiveProducerMessage implements Runnable{
             System.out.println("file writing error :(");
         }
     }
-
-
 }
 

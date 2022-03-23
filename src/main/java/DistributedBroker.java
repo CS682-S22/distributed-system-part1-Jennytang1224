@@ -1,28 +1,19 @@
 import com.google.protobuf.InvalidProtocolBufferException;
-import dsd.pubsub.protos.MessageInfo;
 import dsd.pubsub.protos.PeerInfo;
-
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class DistributedBroker {
-
-
     private String hostName;
     private int port;
     private static volatile boolean running = true;
     static Server server;
-    private Connection connection;
     static String peerHostName;
     static int peerPort;
     static int messageCounter = 0;
-    static int offsetInMem = 0;
     static List<HashMap<String,HashMap<Integer, CopyOnWriteArrayList<byte[]>>>> topicMapList = new ArrayList<>();
-    static private HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;// <topic1: topic1_list, topic2: topic2_list>
-    static int brokerID;
+    static private HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
     static String brokerConfig;
 
     public DistributedBroker(String hostName, int port, String brokerConfig) {
@@ -61,11 +52,6 @@ public class DistributedBroker {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-        //receive peer info
-
-//        Thread clientSender = new Thread(new Sender(this.hostName, String.valueOf(this.port), this.connection));
-//        clientSender.start();
     }
 
     /**
@@ -92,7 +78,6 @@ public class DistributedBroker {
         public void run() {
             PeerInfo.Peer p = null;
             while (receiving) {
-                //   System.out.println("broker receiving data from connection ");
                 byte[] buffer = conn.receive();
                 if (buffer == null || buffer.length == 0) {
                     // System.out.println("nothing received/ finished receiving");
@@ -113,15 +98,11 @@ public class DistributedBroker {
                     if (type.equals("consumer")) {
                         System.out.println("this broker NOW has connected to consumer: " + peerHostName + " port: " + peerPort + "\n");
                         counter++;
-//                    }else if (type.equals("producer")) {
-//                        // get the messageInfo though socket
-//                        System.out.println("this Broker now has connected to producer: " + peerHostName + " port: " + peerPort + "\n");
-//                        counter++;
                     } else {
                         // get the messageInfo though socket
                         type = "producer"; // producer data send from load balancer directly, so no peerinfo
                         System.out.println(">> this Broker now has connected to producer ");
-                        Thread th = new Thread(new ReceiveProducerData(buffer, topicMapList, messageCounter, offsetInMem, brokerID));
+                        Thread th = new Thread(new ReceiveProducerData(buffer, topicMapList, brokerID));
                         th.start();
                         try {
                             th.join();
@@ -130,14 +111,12 @@ public class DistributedBroker {
                         }
                         counter++;
                         messageCounter++;
-                        //System.out.println("invalid type, should be either producer or consumer");
-                        //System.exit(-1);
                     }
 
                 }
                 else{ // when receiving data
                     if (type.equals("producer")) {
-                        Thread th = new Thread(new ReceiveProducerData(buffer, topicMapList, messageCounter, offsetInMem, brokerID));
+                        Thread th = new Thread(new ReceiveProducerData(buffer, topicMapList, brokerID));
                         th.start();
                         try {
                             th.join();
@@ -157,107 +136,10 @@ public class DistributedBroker {
                         counter++;
                     } else {
                         System.out.println("invalid type, should be either producer or consumer");
-                        // System.exit(-1);
                     }
                 }
             }
         }
     }
-
-
-//    /**
-//     * write bytes to files
-//     */
-//    private static void writeBytesToFile(String fileOutput, byte[] buf)
-//            throws IOException {
-//        try (FileOutputStream fos = new FileOutputStream(fileOutput, true)) {
-//            System.out.println("writing to the file...");
-//            fos.write(buf);
-//        }
-//        catch(IOException e){
-//            System.out.println("file writing error :(");
-//        }
-//
-//    }
-////
-////    //broker receive data from producer
-////    public byte[] receive()  {
-////        byte[] buffer = null;
-////        try {
-////            int length = input.readInt();
-////            if(length > 0) {
-////                buffer = new byte[length];
-////                input.readFully(buffer, 0, buffer.length);
-////            }
-////        } catch (EOFException ignored) {} //No more content available to read
-////        catch (IOException exception) {
-////
-////            System.err.printf(" Fail to receive message ");
-////        }
-////        return buffer;
-////    }
-//
-//    // write received record in bytes to the list
-//    public static void writeToCluster(byte[] recordBytes){
-//        MessageInfo.Message d = null;
-//        try {
-//            d = MessageInfo.Message.parseFrom(recordBytes);
-//        } catch (InvalidProtocolBufferException e) {
-//            e.printStackTrace();
-//        }
-//        String topic = d.getTopic();
-//        //   if(running) {
-//        if(topicMap.containsKey(topic)){ //if key is in map
-//            topicMap.get(topic).add(recordBytes);
-//        }
-//        else{ //if key is not in the map, create CopyOnWriteArrayList and add first record
-//            CopyOnWriteArrayList newList = new CopyOnWriteArrayList<>();
-//            newList.add(recordBytes);
-//            topicMap.put(topic, newList);
-//        }
-//        //   }
-//        //  System.out.println("topic map size: " + topicMap.size());
-//
-//    }
-//
-//    // read from broker 1 with input topics
-//    public static void readFromCluster(byte[] recordBytes, Connection conn){
-//        // if(running) {
-//
-//        MessageInfo.Message d = null;
-//        try {
-//            d = MessageInfo.Message.parseFrom(recordBytes);
-//        } catch (InvalidProtocolBufferException e) {
-//            e.printStackTrace();
-//        }
-//        String topic = d.getTopic();
-//        System.out.println("consumer subscribed to: " + topic);
-//        int startingPosition = d.getOffset();
-//
-//        //in the hashmap, get the corresponding list of this topic
-//        if (!topicMap.containsKey(topic)) {
-//            System.out.println("No topic called '" + topic + "' in the broker!");
-//        }
-//        CopyOnWriteArrayList<byte[]> topicList = topicMap.get(topic);
-//
-//        // start getting the all record from this topic
-//        for (int i = startingPosition; i < topicList.size(); i++) {
-//            byte[] singleRecord = topicList.get(i);
-//            // send ALL record in this list to the consumer
-//            conn.send(singleRecord);
-//            System.out.println("A record has sent to the consumer: " + peerHostName + ":" + peerPort);
-//        }
-//
-//
-//        //notify other brokers to send their data related to this topic to the consumer
-////            notifyOtherBrokers();
-//        //  }
-//    }
-
-
-    public synchronized void shutdown() {
-        this.running = false;
-    }
-
 
 }
