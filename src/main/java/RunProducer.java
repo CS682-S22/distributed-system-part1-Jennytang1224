@@ -11,21 +11,10 @@ import java.util.regex.Pattern;
  */
 public class RunProducer {
     public static void main(String[] args){
-        //usage: brokerLocation filepath
-        //check argument length
-        if(args.length == 0){
-            System.out.println("enter topic and message");
-            return;
+        //usage: LBLocation filepath
+        if(!Utilities.validateArgsProducer(args)){
+            System.exit(-1);
         }
-        else if (args.length < 2){
-            System.out.println("missing another argument");
-            return;
-        }
-        else if (args.length > 2){
-            System.out.println("invalid number of arguments");
-            return;
-        }
-
         String brokerLocation = args[0];
         String filepath = args[1];
         // Open a connection to the Broker by creating a new Producer object

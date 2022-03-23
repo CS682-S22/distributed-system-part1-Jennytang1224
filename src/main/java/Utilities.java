@@ -36,32 +36,80 @@ public class Utilities {
      * @param args the array of arguments
      * @return true if arguments are valid, false otherwise
      */
-    public static boolean validateArgs(String[] args) {
-        if(args.length != 7){
-            System.out.println("Invalid number of arguments");
-            System.out.println("Usage: Request test.txt from host1 loss to /folder1/");
+    public static boolean validateArgsConsumer(String[] args) {
+        //usage: topic startingPosition brokerConfig
+        if(args.length == 0){
+            System.out.println("enter topic");
             return false;
         }
-        if(!args[0].equalsIgnoreCase("request")){
-            System.out.println("Invalid action");
+        else if (args.length > 3){
+            System.out.println("invalid number of arguments");
             return false;
         }
-        if(!args[2].equalsIgnoreCase("from")){
-            System.out.println("Invalid syntax");
-            return false;
-        }
-
-        if(!(args[4].equalsIgnoreCase("default") || args[4].equalsIgnoreCase("loss"))){
-            System.out.println("Invalid connection type");
-            return false;
-        }
-        if(!args[5].equalsIgnoreCase("to")){
-            System.out.println("Invalid syntax");
-            return false;
-        }
-
        return true;
     }
+
+
+    /**
+     * Validates arguments passed in
+     * @param args the array of arguments
+     * @return true if arguments are valid, false otherwise
+     */
+    public static boolean validateArgsProducer(String[] args) {
+        //usage: LBLocation filepath
+        if(args.length == 0){
+            System.out.println("enter topic and message");
+            return false;
+        }
+        else if (args.length < 2){
+            System.out.println("missing another argument");
+            return false;
+        }
+        else if (args.length > 2){
+            System.out.println("invalid number of arguments");
+            return false;
+        }
+        return true;
+    }
+
+
+    /**
+     * Validates arguments passed in
+     * @param args the array of arguments
+     * @return true if arguments are valid, false otherwise
+     */
+    public static boolean validateArgsBroker(String[] args) {
+        //usage: brokerConfig
+        if(args.length == 0){
+            System.out.println("enter broker config file");
+            return false;
+        }
+        return true;
+    }
+
+
+    /**
+     * Validates arguments passed in
+     * @param args the array of arguments
+     * @return true if arguments are valid, false otherwise
+     */
+    public static boolean validateArgsLoadBalancer(String[] args) {
+        //3 5 (3 broker and 5 partitions) brokerConfig
+        if(args.length == 0){
+            System.out.println("enter number of broker and partition");
+            return false;
+        }
+        else if (args.length < 3){
+            System.out.println("missing another argument");
+            return false;
+        }
+        else if (args.length > 3){
+            System.out.println("invalid number of arguments");
+            return false;
+        }
+        return true;
+    }
+
 
     /**
      * randomly generate numbers in range

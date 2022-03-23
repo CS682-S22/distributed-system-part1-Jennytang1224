@@ -6,13 +6,8 @@ import java.util.List;
 public class RunConsumer {
     public static void main(String[] args) throws IOException {
         //usage: topic startingPosition brokerConfig
-        if(args.length == 0){
-            System.out.println("enter topic");
-            return;
-        }
-        else if (args.length > 3){
-            System.out.println("invalid number of arguments");
-            return;
+        if(!Utilities.validateArgsConsumer(args)){
+            System.exit(-1);
         }
         String topic = args[0];
         int startingPosition = Integer.parseInt(args[1]);

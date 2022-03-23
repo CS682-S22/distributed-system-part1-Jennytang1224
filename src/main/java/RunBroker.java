@@ -1,13 +1,15 @@
 import java.io.IOException;
 import java.util.List;
-
+/**
+ * run broker
+ */
 public class RunBroker {
     public static void main(String[] args){
         //usage: brokerConfig
-        if(args.length == 0){
-            System.out.println("enter broker config file");
-            return;
+        if(!Utilities.validateArgsBroker(args)){
+            System.exit(-1);
         }
+
         String brokerConfigFile = args[0];
         List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
         IPMap ipMap = (IPMap) maps.get(0);

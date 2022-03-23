@@ -144,4 +144,8 @@ public class DistributedBroker {
         }
     }
 
+    public int receiveMessageCounter(){
+        return messageCounter;
+    }
+
 }

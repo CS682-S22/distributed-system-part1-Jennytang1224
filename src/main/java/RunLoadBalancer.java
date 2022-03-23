@@ -6,17 +6,8 @@ import java.util.List;
 public class RunLoadBalancer {
     public static void main(String[] args){
         // 3 5 (3 broker and 5 partitions) brokerConfig
-        if(args.length == 0){
-            System.out.println("enter number of broker and partition");
-            return;
-        }
-        else if (args.length < 3){
-            System.out.println("missing another argument");
-            return;
-        }
-        else if (args.length > 3){
-            System.out.println("invalid number of arguments");
-            return;
+        if(!Utilities.validateArgsLoadBalancer(args)){
+            System.exit(-1);
         }
 
         int numOfBrokers = Integer.parseInt(args[0]);
