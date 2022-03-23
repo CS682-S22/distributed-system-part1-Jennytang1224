@@ -48,10 +48,9 @@ public class Producer {
 
 
     /**
-     * implement sender interface
-     * @return if send successfully
+     * producer send
+     *
      */
-
     public void send(byte[] record) {
         writeToSocket(record);
     }

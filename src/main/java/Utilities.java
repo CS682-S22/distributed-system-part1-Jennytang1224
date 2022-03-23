@@ -13,11 +13,10 @@ import java.util.Random;
  */
 public class Utilities {
 
-    static String HostConfigFileName = "files/config.json";
+    private static String HostConfigFileName = "files/config.json";
     static String InfoFileName = "files/InfoMap";
     static String offsetFilePath = "files/idMapOffset";
     private static String hostname;
-
     static int numOfBrokersInSys = 5;
 
     /**
@@ -181,9 +180,9 @@ public class Utilities {
     }
 
 
-
-
-
+    /**
+     * get offsets by msg id
+     */
     public static int getBytesOffsetById(int id, String offsetFilePath){
         // id,offset
         int offset;
@@ -203,6 +202,9 @@ public class Utilities {
         return -1;
     }
 
+    /**
+     * get msg id by offset
+     */
     public static int getIdByOffset(int offset, String offsetFilePath){
         // id,offset
         int id;
@@ -222,15 +224,25 @@ public class Utilities {
         return -1;
     }
 
+    /**
+     * get hashed key
+     */
     public static int hashKey(String key){
         return key.hashCode();
     }
 
+    /**
+     * calculate the partition id
+     */
     public static int CalculatePartition(String key, int numOfPartitions){
         int hashCode = hashKey(key);
         return Math.abs(hashCode % numOfPartitions + 1); // partition starts with 1
     }
 
+
+    /**
+     * calculate broker id
+     */
     public static int CalculateBroker(int partition, int numOfBrokers){
       //  return partition % numOfBrokers; // broker starts with 1
             Random randomGenerator = new Random();
@@ -238,6 +250,9 @@ public class Utilities {
 
     }
 
+    /**
+     * get broker id from broker config file
+     */
     public static int getBrokerIDFromFile(String brokerHostName, String brokerPort, String brokerConfigFile){
         String line;
         int brokerID = -1;

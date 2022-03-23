@@ -6,17 +6,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * broker send consumer data
+ */
 public class SendConsumerData implements Runnable{
-    Connection consumerConnection;
-    byte[] recordBytes;
-    static CopyOnWriteArrayList<byte[]> topicList;
-    static HashMap<Integer, CopyOnWriteArrayList<byte[]>> partitionMap;
-    HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
-    int startingPosition;
-    String topic;
-    HashMap<Integer, Connection> connMap;
-    List<HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>>> topicMapList;
-    int brokerID;
+    private Connection consumerConnection;
+    private byte[] recordBytes;
+    private static CopyOnWriteArrayList<byte[]> topicList;
+    private HashMap<Integer, CopyOnWriteArrayList<byte[]>> partitionMap;
+    private HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
+    private int startingPosition;
+    private String topic;
+    private HashMap<Integer, Connection> connMap;
+    private List<HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>>> topicMapList;
+    private int brokerID;
 
 
     public SendConsumerData(Connection consumerConnection, byte[] recordBytes, List<HashMap<String, HashMap<Integer,

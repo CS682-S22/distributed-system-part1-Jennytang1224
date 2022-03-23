@@ -1,12 +1,14 @@
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.PeerInfo;
 import java.io.*;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * load balancer class for partition
+ */
 public class LoadBalancer {
     private String hostName;
     private int port;
@@ -14,19 +16,19 @@ public class LoadBalancer {
     private DataInputStream input;
     private DataOutputStream output;
     private static volatile boolean running = true;
-    static HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
-    static Server server;
+    private static HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
+    private static Server server;
     private Connection connection;
-    static String peerHostName;
-    static int peerPort;
-    static int messageCounter = 0;
-    static int offsetInMem = 0;
-    int numOfBrokers;
-    int numOfPartitions;
-    int brokerCounter = 1;
+    private static String peerHostName;
+    private static int peerPort;
+    private static int messageCounter = 0;
+    private static int offsetInMem = 0;
+    private int numOfBrokers;
+    private int numOfPartitions;
+    private int brokerCounter = 1;
     static HashMap<Integer, Connection> connMap = new HashMap<>();
-    static HashMap<String, Integer> counterMap = new HashMap<>();
-    String brokerConfigFile;
+    private static HashMap<String, Integer> counterMap = new HashMap<>();
+    private String brokerConfigFile;
 
 
     public LoadBalancer(String hostName, int port, int numOfBrokers, int numOfPartitions, String brokerConfigFile) {
@@ -40,15 +42,12 @@ public class LoadBalancer {
     }
 
 
-    // broker needs to constantly listen and
-    // unpack proto buffer see if its producer or consumer connection, peerinfo
     /**
-     * use threads to start the connections, receive and send data concurrently
+     * load balancer create broker connections, and listening from producer
      */
     public void run() throws IOException {
-        //start brokers:
+        //create broker connection
         while (brokerCounter <= numOfBrokers) {
-
             List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
             IPMap ipMap = (IPMap) maps.get(0);
             PortMap portMap = (PortMap) maps.get(1);

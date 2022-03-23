@@ -6,17 +6,20 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * load balancer save intermediate info file and send each record to broker
+ */
 public class ReceiveProducerMessage implements Runnable{
-    byte[] recordBytes;
+    private byte[] recordBytes;
     private String offsetOutputPath = Utilities.offsetFilePath;
     private String infoOutputPath = Utilities.InfoFileName;
     private int messageCounter;
     private int offsetInMem;
-    int numOfBrokers;
-    int numOfPartitions;
-    HashMap<Integer, Connection> connMap;
-    HashMap<String, Integer> counterMap;
-    static HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
+    private int numOfBrokers;
+    private int numOfPartitions;
+    private HashMap<Integer, Connection> connMap;
+    private HashMap<String, Integer> counterMap;
+    private static HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
 
     public ReceiveProducerMessage( byte[] recordBytes, int messageCounter,
                                    int offsetInMem, int numOfBrokers, int numOfPartitions, HashMap<Integer, Connection> connMap, HashMap<String, Integer> counterMap) {

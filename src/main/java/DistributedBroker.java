@@ -3,18 +3,20 @@ import dsd.pubsub.protos.PeerInfo;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-
+/**
+ * broker class
+ */
 public class DistributedBroker {
     private String hostName;
     private int port;
     private static volatile boolean running = true;
-    static Server server;
-    static String peerHostName;
-    static int peerPort;
-    static int messageCounter = 0;
-    static List<HashMap<String,HashMap<Integer, CopyOnWriteArrayList<byte[]>>>> topicMapList = new ArrayList<>();
-    static private HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
-    static String brokerConfig;
+    private static Server server;
+    private static String peerHostName;
+    private static int peerPort;
+    private static int messageCounter = 0;
+    private static List<HashMap<String,HashMap<Integer, CopyOnWriteArrayList<byte[]>>>> topicMapList = new ArrayList<>();
+    private static HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
+    private static String brokerConfig;
 
     public DistributedBroker(String hostName, int port, String brokerConfig) {
         this.hostName = hostName;

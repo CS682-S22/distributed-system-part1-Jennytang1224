@@ -1,5 +1,7 @@
 import java.util.*;
-
+/**
+ * map host ip to port num
+ */
 public class PortMap {
     //map host ip address to port number
     private Map<String, String> portMap;

@@ -56,6 +56,9 @@ public class IPMap {
         return lst;
     }
 
+    /**
+     * size of the map
+     */
     public int size(){
         int size = 0;
         for(Map.Entry<String, String> entry: this.ipMap.entrySet()) {

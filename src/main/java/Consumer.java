@@ -6,7 +6,9 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
+/**
+ * consumer class
+ */
 public class Consumer {
     private String brokerLocation;
     private String topic;
@@ -18,8 +20,8 @@ public class Consumer {
     private DataOutputStream output;
     private Connection connection;
     private static String outputPath;
-    Receiver newReceiver;
-    static int maxPosition = 0;
+    private Receiver newReceiver;
+    private static int maxPosition = 0;
 
     public Consumer(String brokerLocation, String topic, int startingPosition) {
         this.brokerLocation = brokerLocation;
@@ -67,6 +69,9 @@ public class Consumer {
 
 
     // send request to broker
+    /**
+     * send request to broker with topic and starting position
+     */
     public void subscribe(String topic, int startingPosition){
         System.out.println("... Requesting topic: " + topic + " starting at position: " + startingPosition + "...");
         MessageInfo.Message request = MessageInfo.Message.newBuilder()
@@ -79,14 +84,23 @@ public class Consumer {
         this.connection.send(request.toByteArray());
     }
 
+    /**
+     * get position counter
+     */
     public int getPositionCounter(){
         return newReceiver.getPositionCounter();
     }
 
+    /**
+     * get max position
+     */
     public int getMaxPosition(){
         return maxPosition;
     }
 
+    /**
+     * get Receiver counter
+     */
     public int getReceiverCounter(){
         return newReceiver.receiverCounter;
     }
@@ -144,7 +158,6 @@ public class Consumer {
 //                    System.out.println("received result is null");
                 }
             };
-
 
             //application poll from bq
             while (receiving) {

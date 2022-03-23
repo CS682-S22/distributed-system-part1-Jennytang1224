@@ -1,6 +1,8 @@
 import java.io.IOException;
 import java.util.List;
-
+/**
+ * run consumer
+ */
 public class RunConsumer {
     public static void main(String[] args) throws IOException {
         //usage: topic startingPosition brokerConfig
