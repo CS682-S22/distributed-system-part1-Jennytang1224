@@ -23,13 +23,13 @@ public class DistributedBroker {
     static List<HashMap<String,HashMap<Integer, CopyOnWriteArrayList<byte[]>>>> topicMapList = new ArrayList<>();
     static private HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;// <topic1: topic1_list, topic2: topic2_list>
     static int brokerID;
+    static String brokerConfig;
 
-    public DistributedBroker(String hostName, int port) {
+    public DistributedBroker(String hostName, int port, String brokerConfig) {
         this.hostName = hostName;
         this.port = port;
         this.topicMap = new HashMap<>();
-
-
+        this.brokerConfig = brokerConfig;
     }
 
 
@@ -85,7 +85,7 @@ public class DistributedBroker {
             this.name = name;
             this.port = port;
             this.conn = conn;
-            brokerID = Utilities.getBrokerIDFromFile(name, String.valueOf(port));
+            brokerID = Utilities.getBrokerIDFromFile(name, String.valueOf(port), brokerConfig);
         }
 
         @Override

@@ -14,11 +14,11 @@ import java.util.Random;
  */
 public class Utilities {
 
-    static String HostConfigFileName = "src/config.json";
-    static String BrokerConfigFileName = "src/brokerConfig.json";
+    static String HostConfigFileName = "files/config.json";
     static String InfoFileName = "files/InfoMap";
-    private static String hostname;
     static String offsetFilePath = "files/idMapOffset";
+    private static String hostname;
+
     static int numOfBrokersInSys = 5;
 
     /**
@@ -117,7 +117,7 @@ public class Utilities {
      * read config for host name and port
      * @return an object contains maps
      */
-    public static List<Object> readBrokerConfig(){
+    public static List<Object> readBrokerConfig(String BrokerConfigFileName){
         IPMap ipMap = new IPMap();
         PortMap portMap = new PortMap();
         HostInfo hostInfo;
@@ -125,7 +125,7 @@ public class Utilities {
         // read config.json to hostMap
         Gson gson = new Gson();
         String line;
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(Utilities.BrokerConfigFileName), StandardCharsets.ISO_8859_1))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(BrokerConfigFileName), StandardCharsets.ISO_8859_1))) {
             while ((line = br.readLine()) != null) {
                 if ((!line.equals(""))) {
                     try { //skip bad line
@@ -240,10 +240,10 @@ public class Utilities {
 
     }
 
-    public static int getBrokerIDFromFile(String brokerHostName, String brokerPort){
+    public static int getBrokerIDFromFile(String brokerHostName, String brokerPort, String brokerConfigFile){
         String line;
         int brokerID = -1;
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(Utilities.BrokerConfigFileName), StandardCharsets.ISO_8859_1))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(brokerConfigFile), StandardCharsets.ISO_8859_1))) {
             while ((line = br.readLine()) != null) {
                 if ((!line.equals(""))) {
                     try { //skip bad line

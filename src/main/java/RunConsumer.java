@@ -10,7 +10,7 @@ public class RunConsumer {
             System.out.println("enter topic");
             return;
         }
-        else if (args.length > 2){
+        else if (args.length > 3){
             System.out.println("invalid number of arguments");
             return;
         }
@@ -20,6 +20,7 @@ public class RunConsumer {
 
         String topic = args[0];
         int startingPosition = Integer.parseInt(args[1]);
+        String brokerConfigFile = args[2];
 
 //          String brokerLocation = "localhost:1431";
 //          int startingPosition = 0;
@@ -31,7 +32,7 @@ public class RunConsumer {
 //        int partitionID = result.get(1);
         // use brokerID to get connection and use connection
 
-        List<Object> maps = Utilities.readBrokerConfig();
+        List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
         IPMap ipMap = (IPMap) maps.get(0);
         PortMap portMap = (PortMap) maps.get(1);
         Consumer consumer = null;

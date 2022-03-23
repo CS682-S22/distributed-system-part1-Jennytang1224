@@ -14,9 +14,12 @@ public class RunBroker {
 //        } catch (IOException e) {
 //            e.printStackTrace();
 //        }
-
-
-        List<Object> maps = Utilities.readBrokerConfig();
+        if(args.length == 0){
+            System.out.println("enter broker config file");
+            return;
+        }
+        String brokerConfigFile = args[0];
+        List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
         IPMap ipMap = (IPMap) maps.get(0);
         PortMap portMap = (PortMap) maps.get(1);
 
@@ -25,9 +28,7 @@ public class RunBroker {
 
         String brokerHostName = Utilities.getHostName();
         int brokerPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(brokerHostName)));
-        System.out.println(brokerHostName);
-        System.out.println(brokerPort);
-        DistributedBroker broker = new DistributedBroker(brokerHostName, brokerPort);
+        DistributedBroker broker = new DistributedBroker(brokerHostName, brokerPort, brokerConfigFile);
         try {
             broker.run();
         } catch (IOException e) {

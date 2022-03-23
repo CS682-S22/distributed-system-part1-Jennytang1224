@@ -31,15 +31,17 @@ public class LoadBalancer {
     int brokerCounter = 1;
     static HashMap<Integer, Connection> connMap = new HashMap<>();
     static HashMap<String, Integer> counterMap = new HashMap<>();
+    String brokerConfigFile;
 
 
-    public LoadBalancer(String hostName, int port, int numOfBrokers, int numOfPartitions) {
+    public LoadBalancer(String hostName, int port, int numOfBrokers, int numOfPartitions, String brokerConfigFile) {
         this.hostName = hostName;
         this.port = port;
 //        this.topicList = new CopyOnWriteArrayList<>();
         this.topicMap = new HashMap<>();
         this.numOfBrokers = numOfBrokers;
         this.numOfPartitions = numOfPartitions;
+        this.brokerConfigFile = brokerConfigFile;
 
     }
 
@@ -52,7 +54,8 @@ public class LoadBalancer {
     public void run() throws IOException {
         //start brokers:
         while (brokerCounter <= numOfBrokers) {
-            List<Object> maps = Utilities.readBrokerConfig();
+
+            List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
             IPMap ipMap = (IPMap) maps.get(0);
             PortMap portMap = (PortMap) maps.get(1);
             String brokerHostName = ipMap.getIpById(String.valueOf(brokerCounter));
