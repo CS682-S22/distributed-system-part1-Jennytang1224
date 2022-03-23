@@ -35,7 +35,7 @@ public class Consumer {
             this.input = new DataInputStream(new BufferedInputStream(this.socket.getInputStream()));
             this.output = new DataOutputStream(new BufferedOutputStream(this.socket.getOutputStream()));
         } catch (IOException e) {
-            e.printStackTrace();
+           // e.printStackTrace();
         }
 
         System.out.println("\n*** this consumer is connecting to broker " + brokerLocation + " ***");
