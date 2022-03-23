@@ -19,7 +19,7 @@ public class Consumer {
     private Connection connection;
     private static String outputPath;
     Receiver newReceiver;
-    static int maxPosition = 1;
+    static int maxPosition = 0;
 
     public Consumer(String brokerLocation, String topic, int startingPosition) {
         this.brokerLocation = brokerLocation;
