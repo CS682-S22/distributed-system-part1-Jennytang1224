@@ -23,7 +23,7 @@ public class RunConsumer {
         int requestCounter = 0;
         int start = 0;
         int max = 0;
-        int receiveCounter = 0;
+        int receiveCounter = 1;
         int lastReceivedCounter = 0;
 
         while(true) {
