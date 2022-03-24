@@ -140,41 +140,41 @@ class UnitTests {
 
     @Test
     public void test_broker(){
-//        try {
-//            server = new Server(brokerPort);
-//            //  System.out.println("A broker start listening on port: " + this.port + "...");
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        Connection connection = this.server.nextConnection(); // calls accept on server socket to block
-//        //Connection connection = new Connection(brokerHostName, brokerPort);
-//        //  DistributedBroker.Receiver = new ReceiveProducerData(buffer, topicMapList, brokerID)
-//        byte[] buffer = connection.receive();
-//        System.out.println(buffer);
-        assertEquals(broker.receiveMessageCounter(), 0);
+        try {
+            server = new Server(brokerPort);
+            //  System.out.println("A broker start listening on port: " + this.port + "...");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Connection connection = this.server.nextConnection(); // calls accept on server socket to block
+        //Connection connection = new Connection(brokerHostName, brokerPort);
+        //  DistributedBroker.Receiver = new ReceiveProducerData(buffer, topicMapList, brokerID)
+        byte[] buffer = connection.receive();
+        System.out.println(buffer);
+        assertEquals(broker.receiveMessageCounter(), 1);
 
     }
 
-//    @Test
-//    public void test_loadBalancer_receive() {
-//        try {
-//            this.socket = new Socket(brokerHostName, brokerPort);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        brokerConnection = new Connection(this.socket);
-//        byte[] buffer = LBConnection.receive();
-//        MessageInfo.Message d = null;
-//        System.out.println(buffer);
-//        try {
-//            d = MessageInfo.Message.parseFrom(buffer);
-//        } catch (InvalidProtocolBufferException e) {
-//            e.printStackTrace();
-//        }
-//        assertEquals(d.getTopic(), topic);
-//        assertEquals(d.getKey(), "123");
-//        assertEquals(d.getOffset(), 1);
-//    }
+    @Test
+    public void test_loadBalancer_receive() {
+        try {
+            this.socket = new Socket(brokerHostName, brokerPort);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        brokerConnection = new Connection(this.socket);
+        byte[] buffer = LBConnection.receive();
+        MessageInfo.Message d = null;
+        System.out.println(buffer);
+        try {
+            d = MessageInfo.Message.parseFrom(buffer);
+        } catch (InvalidProtocolBufferException e) {
+            e.printStackTrace();
+        }
+        assertEquals(d.getTopic(), topic);
+        assertEquals(d.getKey(), "123");
+        assertEquals(d.getOffset(), 1);
+    }
 
     @Test
     public void test_consumer_subscribe(){
