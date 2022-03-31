@@ -37,7 +37,7 @@ public class SendConsumerData implements Runnable{
         // get correct topicMap by brokerID
         topicMap = topicMapList.get(brokerID - 1);
         MessageInfo.Message d = null;
-    //    if (recordBytes != null) {
+        if (recordBytes != null) {
             try {
                 d = MessageInfo.Message.parseFrom(recordBytes);
             } catch (InvalidProtocolBufferException e) {
@@ -73,6 +73,6 @@ public class SendConsumerData implements Runnable{
                     }
                 }
             }
-       // }
+        }
     }
 }
