@@ -118,7 +118,6 @@ public class Consumer {
         int positionCounter;
         static int receiverCounter = 0;
 
-
         public Receiver(String name, int port, Connection conn) {
             this.name = name;
             this.port = port;
