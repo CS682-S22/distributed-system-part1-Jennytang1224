@@ -52,7 +52,7 @@ public class Connection {
         } catch (EOFException ignored) {} //No more content available to read
         catch (IOException exception) {
 
-            System.err.printf(" Fail to receive message ");
+           // System.err.printf(" Fail to receive message ");
         }
 
         return buffer;

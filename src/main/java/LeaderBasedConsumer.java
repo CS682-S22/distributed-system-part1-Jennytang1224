@@ -26,6 +26,8 @@ public class LeaderBasedConsumer {
     static String peerHostName;
     static int receiverCounter = 0;
     Receiver newReceiver;
+    public CS601BlockingQueue<MessageInfo.Message> bq;
+
 
     public LeaderBasedConsumer(String brokerLocation, String topic, int startingPosition) {
         this.brokerLocation = brokerLocation;
@@ -34,6 +36,8 @@ public class LeaderBasedConsumer {
         this.brokerHostName = brokerLocation.split(":")[0];
         this.brokerPort = Integer.parseInt(brokerLocation.split(":")[1]);
         this.socket = null;
+        this.bq = new CS601BlockingQueue<>(100);
+
 
         try {
             this.socket = new Socket(this.brokerHostName, this.brokerPort);
@@ -62,22 +66,22 @@ public class LeaderBasedConsumer {
         //save consumer info to filename
         outputPath = "files/" + type + "_" + peerHostName + "_" + peerPort + "_output";
         System.out.println("consumer sends first msg to broker with its identity...\n");
-        newReceiver = new Receiver(peerHostName, peerPort, this.connection);
+        newReceiver = new Receiver(peerHostName, peerPort, this.connection,  this.bq, this.topic, this.startingPosition);
         Thread serverReceiver = new Thread(newReceiver);
         serverReceiver.start();
 
     }
 
-
-    public LeaderBasedConsumer(Connection connection, int startingPosition){
-        this.connection = connection;
-        this.startingPosition = startingPosition;
+    public byte[] poll(int timeout){
+        CS601BlockingQueue<MessageInfo.Message> bq = newReceiver.getBq();
+        byte[] m = bq.poll(timeout).toByteArray();
+        return m;
     }
 
-    public byte[] poll(int startingPosition, int timeout){
-
-        return new byte[0];
+    public String getOutputPath(){
+        return outputPath;
     }
+
 
     // send request to broker
     public void subscribe(String topic, int startingPosition){
@@ -86,12 +90,15 @@ public class LeaderBasedConsumer {
                 .setTopic(topic)
                 .setOffset(startingPosition)
                 .build();
-        //writeToSocket(request.toByteArray());
         this.connection.send(request.toByteArray());
     }
 
     public int getPositionCounter(){
         return newReceiver.getPositionCounter();
+    }
+
+    public CS601BlockingQueue<MessageInfo.Message> getBq(){
+        return newReceiver.getBq();
     }
 
 
@@ -103,22 +110,31 @@ public class LeaderBasedConsumer {
         private int port;
         private Connection conn;
         boolean receiving = true;
-        private CS601BlockingQueue<MessageInfo.Message> bq;
         private ExecutorService executor;
         int positionCounter;
+        CS601BlockingQueue<MessageInfo.Message> bq;
+        int startingPosition;
+        String topic;
 
-        public Receiver(String name, int port, Connection conn) {
+        public Receiver(String name, int port, Connection conn, CS601BlockingQueue<MessageInfo.Message> bq, String topic, int startingPosition) {
             this.name = name;
             this.port = port;
             this.conn = conn;
-            this.bq = new CS601BlockingQueue<>(3);
             this.executor = Executors.newSingleThreadExecutor();
             this.positionCounter = 0;
+            this.bq = bq;
+            this.startingPosition = startingPosition;
+            this.topic = topic;
         }
 
         public int getPositionCounter(){
             return positionCounter;
         }
+
+        public CS601BlockingQueue<MessageInfo.Message> getBq(){
+            return this.bq;
+        }
+
 
         @Override
         public void run() {
@@ -127,7 +143,7 @@ public class LeaderBasedConsumer {
                 byte[] result = conn.receive();
                 if (result != null) {
                     try {
-                        bq.put(MessageInfo.Message.parseFrom(result));
+                        this.bq.put(MessageInfo.Message.parseFrom(result));
                         positionCounter++;
                         System.out.println("Consumer added a record to the blocking queue...");
                     } catch (InvalidProtocolBufferException e) {
@@ -139,55 +155,9 @@ public class LeaderBasedConsumer {
                 }
             };
 
-
-            //application poll from bq
-            while (receiving) {
+            while(receiving) {
                 executor.execute(add);
-                m = bq.poll(30);
-                if (m != null) { // received within timeout
-                    //save to file
-                    byte[] arr = m.getValue().toByteArray();
-                    try {
-                        writeBytesToFile(outputPath, arr);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                else{
-//                    System.out.println("m == null");
-                }
             }
         }
-    }
-
-    /**
-     * write bytes to files
-     */
-    private static void writeBytesToFile(String fileOutput, byte[] buf)
-            throws IOException {
-        try (FileOutputStream fos = new FileOutputStream(fileOutput, true)) {
-            System.out.println("Application is storing data to the file...");
-            fos.write(buf);
-            fos.write(10);
-            fos.flush();
-        }
-        catch(IOException e){
-            System.out.println("file writing error :(");
-        }
-    }
-
-    public void writeToSocket(byte[] message){
-        try {
-            this.output.writeInt(message.length);
-            this.output.write(message);
-            this.output.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    public void close(){
-
     }
 }

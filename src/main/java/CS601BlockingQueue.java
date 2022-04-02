@@ -112,4 +112,9 @@ public class CS601BlockingQueue<T> {
     public synchronized boolean isEmpty() {
         return this.size == 0;
     }
+
+
+    public int getSize() {
+        return size;
+    }
 }

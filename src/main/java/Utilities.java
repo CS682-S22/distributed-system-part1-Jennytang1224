@@ -327,4 +327,23 @@ public class Utilities {
         }
         return brokerID;
     }
+
+
+
+    /**
+     * write bytes to files
+     */
+    public static void writeBytesToFile(String fileOutput, byte[] buf)
+            throws IOException {
+        try (FileOutputStream fos = new FileOutputStream(fileOutput, true)) {
+            System.out.println("Application is storing data to the file...");
+            fos.write(buf);
+            fos.write(10);
+            fos.flush();
+        }
+        catch(IOException e){
+            System.out.println("file writing error :(");
+        }
+    }
+
 }
