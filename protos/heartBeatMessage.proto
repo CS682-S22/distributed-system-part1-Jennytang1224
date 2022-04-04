@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+//from ProtocolBuffersExample directory compile this as follows:
+//protoc --java_out=src/main/java/ protos/heartBeatMessage.proto
+
+option java_package = "dsd.pubsub.protos";
+option java_outer_classname = "HeartBeatMessage";
+
+message HeartBeat{
+  int32 senderID = 1;
+  int32 numOfRetires = 2;
+
+}
+
+
