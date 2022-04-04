@@ -7,7 +7,7 @@ option java_package = "dsd.pubsub.protos";
 option java_outer_classname = "PeerInfo";
 
 message Peer{
-  string type = 1; // producer or consumer
+  string type = 1; // producer or consumer or broker
   string hostName = 2;
   int32 portNumber = 3;
 }
