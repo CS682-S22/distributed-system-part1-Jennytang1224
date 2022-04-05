@@ -1,7 +1,5 @@
-import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.HeartBeatMessage;
-import dsd.pubsub.protos.MessageInfo;
 import dsd.pubsub.protos.PeerInfo;
 
 import java.io.*;
@@ -34,7 +32,7 @@ public class LeaderBasedBroker {
     static int offsetInMem = 0;
     static int brokerID;
     private String brokerConfigFile = "files/brokerConfig.json";
-    private static int numOfBrokers = 3;
+    private static int numOfBrokers = 5;
     private int brokerCounter = 1;
     static HashMap<Integer, Connection> connMap = new HashMap<>();
     private static MembershipTable membershipTable = new MembershipTable();
@@ -47,7 +45,8 @@ public class LeaderBasedBroker {
         this.topicMap = new HashMap<>();
         brokerID = Utilities.getBrokerIDFromFile(hostName, String.valueOf(port), "files/brokerConfig.json");
         System.out.println("~~~~~~~~~~~initial table:");
-        membershipTable.toString();
+        membershipTable.print();
+        System.out.println(" ");
     }
 
 
@@ -57,7 +56,7 @@ public class LeaderBasedBroker {
      * use threads to start the connections, receive and send data concurrently
      */
     public void run() throws IOException{
-        // listening for incoming connection, could be loadbalancer/producer or other brokers
+        // listening for incoming connection, could be load balancer/producer or other brokers
         Thread serverListener = new Thread(() -> {
             boolean running = true;
             try {
@@ -76,7 +75,7 @@ public class LeaderBasedBroker {
         serverListener.start();
 
         try {
-            Thread.sleep(8000);
+            Thread.sleep(5000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -102,6 +101,7 @@ public class LeaderBasedBroker {
             this.name = name;
             this.port = port;
             this.conn = conn;
+
         }
 
         @Override
@@ -126,6 +126,8 @@ public class LeaderBasedBroker {
                         System.out.println("Peer type: " + type);
                         peerHostName = p.getHostName();
                         peerPort = p.getPortNumber();
+                        int peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
+
 
                         if (type.equals("producer")) { // only bc this broker is a leader
                             // get the messageInfo though socket
@@ -137,19 +139,21 @@ public class LeaderBasedBroker {
                             counter++;
                             //add this broker to membership table
                             boolean isLeader = false;
-                            if(brokerID == numOfBrokers){//leader
+                            if(peerID == numOfBrokers){//leader
                                 isLeader = true;
                             }
                             MemberInfo memberInfo = new MemberInfo(peerHostName, peerPort, "", isLeader, true);
 
                             if(membershipTable.size() != 0) {
-                                membershipTable.put(brokerID, memberInfo);
+                                membershipTable.put(peerID, memberInfo);
                             }
                             else{
-                                membershipTable.put(brokerID, memberInfo);
+                                membershipTable.put(peerID, memberInfo);
                             }
-                            System.out.println("~~~~~~~~~~~~~~~~after a broker connected..");
-                            membershipTable.toString();
+                            System.out.println("~~~~~~~~~~~~~~~~ after broker " + peerID + " connected..");
+                            membershipTable.print();
+                            System.out.println(" ");
+
 
                         }
 
@@ -167,7 +171,7 @@ public class LeaderBasedBroker {
                             messageCounter++;
                         }
                         else if(type.equals("broker")){
-                            //get sender id from proto
+                            //if its heartbeat
                             HeartBeatMessage.HeartBeat heartBeat = null;
                             try {
                                 heartBeat =  HeartBeatMessage.HeartBeat.parseFrom(buffer);
@@ -176,15 +180,16 @@ public class LeaderBasedBroker {
                             }
 
                             int senderId = heartBeat.getSenderID();
-                            int numOfRetries = heartBeat.getNumOfRetires();
+                            System.out.println("receiving heartbeat from broker "  + senderId + "...");
+
                             // receive heartbeat from broker and response with its own id
                             HeartBeatMessage.HeartBeat response = HeartBeatMessage.HeartBeat.newBuilder()
                                     .setSenderID(brokerID)
-                                    .setNumOfRetires(numOfRetries)
+                                    .setNumOfRetires(0)
                                     .build();
                             conn.send(response.toByteArray());
 
-                            // if this broker is leader, replicate data other brokers
+//                             //check if this send is leader, replicate data other brokers
 //                            Thread th = new Thread(new LeaderBasedSendConsumerData(conn, buffer, topicMap));
 //                            th.start();
 //                            try {
@@ -192,7 +197,7 @@ public class LeaderBasedBroker {
 //                            } catch (InterruptedException e) {
 //                                e.printStackTrace();
 //                            }
-//                            counter++;
+                            counter++;
 
                         }
                         else{
@@ -209,22 +214,28 @@ public class LeaderBasedBroker {
     /**
      * inner class Sender
      */
-    static class Sender extends TimerTask implements Runnable{
+    static class HeartBeatSender extends TimerTask implements Runnable{
         private String name;
         private String port;
         private Connection conn;
         boolean sending = true;
         int brokerID;
-        int retryCount = 1;
         int retires = 3;
         private CS601BlockingQueue<HeartBeatMessage.HeartBeat> bq;
         private ExecutorService executor;
+        private String peerHostName;
+        private int peerPort;
+        private int peerID;
+        // int retryCount = 1;
 
-        public Sender(String name, String port, Connection conn) {
+        public HeartBeatSender(String name, String port, Connection conn, String peerHostName, int peerPort) {
             this.name = name;
             this.port = port;
+            this.brokerID = Utilities.getBrokerIDFromFile(name, String.valueOf(port), "files/brokerConfig.json");
             this.conn = conn;
-            brokerID = Utilities.getBrokerIDFromFile(name, String.valueOf(port), "files/brokerConfig.json");
+            this.peerHostName = peerHostName;
+            this.peerPort = peerPort;
+            this.peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
             this.bq = new CS601BlockingQueue<>(1);
             this.executor = Executors.newSingleThreadExecutor();
         }
@@ -232,7 +243,7 @@ public class LeaderBasedBroker {
         @Override
         public void run() {
             //constantly sending heart beat to other brokers
-            HeartBeatMessage.HeartBeat f = null;
+            HeartBeatMessage.HeartBeat f;
             Runnable add =() -> {
                 try {
                     byte[] result = conn.receive();
@@ -247,46 +258,52 @@ public class LeaderBasedBroker {
             while (sending) {
                 HeartBeatMessage.HeartBeat heartBeatMessage = HeartBeatMessage.HeartBeat.newBuilder()
                         .setSenderID(brokerID)
-                        .setNumOfRetires(retryCount).build();
-                System.out.println("num of retires: " + retryCount);
-                retryCount++;
+                        .setNumOfRetires(0).build();
+              //  System.out.println("num of retires: " + retryCount);
+               // retryCount++;
                 //send heartbeat msg
                 conn.send(heartBeatMessage.toByteArray());
 
                 // timeout for heartbeat response
                 executor.execute(add);
                 int replyingBrokerId = -1;
-                f = bq.poll(500);
-                if (f != null) { // received a pack within in timeout, send a new heartbeat(reset num of retires)
-                    int numOfRetires = f.getNumOfRetires();
+                f = bq.poll(1000 * retires);
+                if (f != null) { // received a pack within in timeout, send a new heartbeat
                     replyingBrokerId = f.getSenderID();
-                    System.out.println("received heartbeat response from broker: " + replyingBrokerId);
-                    retryCount = 1; // reset
+//                    if(replyingBrokerId != peerID){
+//                        System.out.println("!!!!! receiving from different peer");
+//                    }
+                    System.out.println("received heartbeat response from peer: " + replyingBrokerId);
+                   // retryCount = 1; // reset
 
                 } else { // not receive response within timeout
                     // if more than number of retires, update table as the broker failed, and stop sending
-                    if(retryCount > retires){
-//                        if(replyingBrokerId == -1){
-//                            System.out.println("broker is never alive");
-//                            return;
-//                        }
-                        System.out.println("exceed number of retires, assume broker " + replyingBrokerId + " is dead ");
-                        //remove broker from the table
-                        if(membershipTable.getMemberInfo(brokerID).isLeader){ // leader is dead
-                            // bully election .. need another class
-                            membershipTable.switchLeaderShip(brokerID, brokerID-1); // naively choosing next smallest id
-
-                        } else{ //follower is dead, mark dead
-                            membershipTable.markDead(brokerID);
-                        }
-                        System.out.println("~~~~~~~~~~~~~~~~~~after failed to return heartbeat msg");
-                        membershipTable.toString();
-
-                        sending = false;
-                        break;
+                    System.out.println("exceed timeout, assume peer: " + peerID + " is dead ");
+                    //remove broker from the table
+                    if(membershipTable.getMemberInfo(peerID).isLeader){ // leader is dead
+                        // bully election .. need another class
+                        membershipTable.switchLeaderShip(peerID, peerID-1); // naively choosing next smallest id, change later
+                    } else{ //follower is dead, mark dead
+                        membershipTable.markDead(peerID);
                     }
+                    System.out.println("~~~~~~~~~~~~~~~~~~table after failed to return heartbeat msg");
+                    membershipTable.print();
+                    System.out.println(" ");
+
+
+                    sending = false;
+                    break;
+
                     // else if within num of retires, send same heart beat again, go back to while loop
                 }
+
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+
             }
         }
     }
@@ -304,50 +321,62 @@ public class LeaderBasedBroker {
         Connection connection;
         String hostName;
         int port;
+        int brokerID;
 
         public Connector(String hostName, int port){
             this.hostName = hostName;
             this.port = port;
+            this.brokerID = Utilities.getBrokerIDFromFile(hostName, String.valueOf(port), "files/brokerConfig.json");
+
         }
 
         @Override
         public void run() {
-            // create connections to all other brokers
-            while (brokerCounter > 2) {
+            // create connections to all other lower brokers than itself
+            while (brokerCounter > 0) { // need to generalize
                 List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
                 IPMap ipMap = (IPMap) maps.get(0);
                 PortMap portMap = (PortMap) maps.get(1);
-                String brokerHostName = ipMap.getIpById(String.valueOf(brokerCounter));
-                int brokerPort = Integer.parseInt(portMap.getPortById(String.valueOf(brokerCounter)));
-                if (brokerPort != port) {
-                    connection = new Connection(brokerHostName, brokerPort);
-                    if(connection == null) {
-                        System.out.println("(This broker is NOT in use)");
-                        return;
-                    }
-                    connMap.put(brokerCounter, connection); // add connection to map
-                    System.out.println("Connected to broker: " + brokerHostName + ":" + brokerPort);
+                String peerHostName = ipMap.getIpById(String.valueOf(brokerCounter));
+                int peerPort = Integer.parseInt(portMap.getPortById(String.valueOf(brokerCounter)));
+                int peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
 
-                    // send peer info to other brokers
-                    String type = "broker";
-                    PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
-                            .setType(type)
-                            .setHostName(hostName)
-                            .setPortNumber(port)
-                            .build();
-
-                    connection.send(peerInfo.toByteArray());
-                    System.out.println("sent peer info to broker: " + brokerHostName + ":" + brokerPort + "now sending heartbeat...");
-
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    // send heartbeat to others
-                    Thread clientSender = new Thread(new Sender(this.hostName, String.valueOf(this.port), connection));
-                    clientSender.start();
+                //   if (brokerCounter < brokerID) {
+                try {
+                    this.socket = new Socket(peerHostName, peerPort);
+                    this.connection = new Connection(this.socket);
+                    //connection = new Connection(peerHostName, peerPort); // connection to other peer
+                } catch (IOException e) {
+                    // e.printStackTrace();
                 }
+                if(connection == null) {
+                    System.out.println("(This broker is NOT in use)");
+                    return;
+                }
+                connMap.put(brokerCounter, connection); // add connection to map
+                System.out.println("Connected to broker: " + peerHostName + ":" + peerPort);
+
+                // send peer info to other brokers
+                String type = "broker";
+                PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
+                        .setType(type)
+                        .setHostName(hostName)
+                        .setPortNumber(port)
+                        .build();
+                connection.send(peerInfo.toByteArray());
+                System.out.println("sent peer info to broker " + peerID + "...");
+
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                // send heartbeat to others
+                System.out.println("Now sending heartbeat to " + peerID + "...");
+                Thread heartbeatSender = new Thread(new HeartBeatSender(this.hostName, String.valueOf(this.port), connection, peerHostName, peerPort));
+                heartbeatSender.start();
+             //   }
                 brokerCounter--;  // next broker in the map
             }
 

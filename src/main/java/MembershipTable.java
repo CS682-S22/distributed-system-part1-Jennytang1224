@@ -28,6 +28,8 @@ public class MembershipTable {
             membershipTable.put(newId, memberInfo);
         }else{
             membershipTable.put(id, memberInfo);
+            System.out.println("leader new Id: " + id);
+
         }
 
     }
@@ -49,8 +51,7 @@ public class MembershipTable {
 
     // create a lowest id for the new item in the table
     public int createLowestId(){
-        int lastID = membershipTable.size();
-        return ((int) membershipTable.keySet().toArray()[lastID-1]) - 1;
+        return ((int) membershipTable.keySet().toArray()[0]) - 1;
     }
 
     //get member info by id
@@ -63,12 +64,17 @@ public class MembershipTable {
     }
 
 
-    public String toString() {
-        System.out.println( "MembershipTable{" +
-                "id=" + id +
-                ", memberInfo=" + memberInfo +
-                ", membershipTable=" + membershipTable +
-                '}');
-        return null;
+    public void print() {
+        for(int key: membershipTable.keySet()){
+            memberInfo = membershipTable.get(key);
+            System.out.println(
+                    "MembershipTable = " + key + ": "
+                            + memberInfo.getHostName()
+                            + " " + memberInfo.getPort()
+                            + " " + memberInfo.isLeader
+                            + " " + memberInfo.isAlive) ;
+
+        }
+
     }
 }
