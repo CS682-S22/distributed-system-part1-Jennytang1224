@@ -2,6 +2,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.HeartBeatMessage;
 import dsd.pubsub.protos.PeerInfo;
 
+import javax.sound.sampled.LineListener;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -36,6 +37,7 @@ public class LeaderBasedBroker {
     private int brokerCounter = 1;
     static HashMap<Integer, Connection> connMap = new HashMap<>();
     private static MembershipTable membershipTable = new MembershipTable();
+    static boolean inElection = false;
 
 
     public LeaderBasedBroker(String hostName, int port) {
@@ -226,9 +228,10 @@ public class LeaderBasedBroker {
         private String peerHostName;
         private int peerPort;
         private int peerID;
+        private HashMap<Integer, Connection> connMap;
         // int retryCount = 1;
 
-        public HeartBeatSender(String name, String port, Connection conn, String peerHostName, int peerPort) {
+        public HeartBeatSender(String name, String port, Connection conn, String peerHostName, int peerPort, HashMap<Integer, Connection> connMap) {
             this.name = name;
             this.port = port;
             this.brokerID = Utilities.getBrokerIDFromFile(name, String.valueOf(port), "files/brokerConfig.json");
@@ -238,6 +241,7 @@ public class LeaderBasedBroker {
             this.peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
             this.bq = new CS601BlockingQueue<>(1);
             this.executor = Executors.newSingleThreadExecutor();
+            this.connMap = connMap;
         }
 
         @Override
@@ -282,7 +286,16 @@ public class LeaderBasedBroker {
                     //remove broker from the table
                     if(membershipTable.getMemberInfo(peerID).isLeader){ // leader is dead
                         // bully election .. need another class
-                        membershipTable.switchLeaderShip(peerID, peerID-1); // naively choosing next smallest id, change later
+                        inElection = true;
+                        Thread th = new Thread(new BullyElection(brokerID, membershipTable, connMap)); // oldLeader, membershipTable
+                        th.start();
+                        try {
+                            th.join();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                      //  membershipTable.switchLeaderShip(peerID, peerID-1); // naively choosing next smallest id, change later
                     } else{ //follower is dead, mark dead
                         membershipTable.markDead(peerID);
                     }
@@ -353,7 +366,7 @@ public class LeaderBasedBroker {
                     System.out.println("(This broker is NOT in use)");
                     return;
                 }
-                connMap.put(brokerCounter, connection); // add connection to map
+                connMap.put(brokerCounter, connection); // add connection to map, {5:conn5, 4:conn4, 3:conn3}
                 System.out.println("Connected to broker: " + peerHostName + ":" + peerPort);
 
                 // send peer info to other brokers
@@ -374,7 +387,7 @@ public class LeaderBasedBroker {
 
                 // send heartbeat to others
                 System.out.println("Now sending heartbeat to " + peerID + "...");
-                Thread heartbeatSender = new Thread(new HeartBeatSender(this.hostName, String.valueOf(this.port), connection, peerHostName, peerPort));
+                Thread heartbeatSender = new Thread(new HeartBeatSender(this.hostName, String.valueOf(this.port), connection, peerHostName, peerPort, connMap));
                 heartbeatSender.start();
              //   }
                 brokerCounter--;  // next broker in the map
