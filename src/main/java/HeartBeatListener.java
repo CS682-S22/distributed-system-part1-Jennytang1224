@@ -1,5 +1,6 @@
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.HeartBeatMessage;
+import dsd.pubsub.protos.Resp;
 import dsd.pubsub.protos.Response;
 
 import java.io.IOException;
@@ -10,7 +11,7 @@ import java.util.concurrent.Executors;
 public class HeartBeatListener implements Runnable{
     Connection conn;
     MembershipTable membershipTable;
-    private CS601BlockingQueue<Response.OneResponse> bq;
+    private CS601BlockingQueue<Resp.Response> bq;
     private ExecutorService executor;
     int delay = 1000;
     int retires = 3;
@@ -39,7 +40,7 @@ public class HeartBeatListener implements Runnable{
     @Override
     public void run() {
 
-        Response.OneResponse f;
+        Resp.Response f;
         Response.HeartBeat heartBeat;
         Response.Election election;
 
@@ -47,7 +48,7 @@ public class HeartBeatListener implements Runnable{
             try {
                 byte[] result = conn.receive();
                 if (result != null) {
-                    bq.put(Response.OneResponse.parseFrom(result));
+                    bq.put(Resp.Response.parseFrom(result));
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -61,45 +62,39 @@ public class HeartBeatListener implements Runnable{
         // if there's response within timeout
         if (f != null) {
             //check if f is heartbeat or election message
-            Response.OneResponse.RespCase cases = f.getRespCase();
-            switch (cases) {
-                case HEARTBEAT:
-                    inElection = false;
-                case ELECTION:
-                    inElection = true;
+            if (f.getType().equals("heartbeat")){
+                inElection = false;
+            } else if (f.getType().equals("election")) {
+                inElection = true;
+            } else{
+                System.out.println("wrong type");
             }
 
-            System.out.println("election in LISTENER:" + inElection);
-
             if(!inElection) {// if its heartbeat response
-                heartBeat = f.getHeartBeat();
-                replyingBrokerId = heartBeat.getSenderID();
+              //  heartBeat = f.getHeartBeat();
+                replyingBrokerId = f.getSenderID();
                 System.out.println("receiving heartbeat response from peer: " + replyingBrokerId);
 
             }
+            else {// if its election response
+                int senderId = f.getSenderID();
+                int newLeader = f.getWinnerID();
 
-
-//            else {// if its election response
-//                election = f.getElection();
-//
-//                int senderId = election.getSenderID();
-//                int newLeader = election.getWinnerID();
-//
-//                if (newLeader == -1) {// if winner is -1 ... its a simple election response, still in election
-//                    System.out.println("In Election, receiving election msg from broker " + senderId);
-//                } else { // if winner is not -1 ... we have a winner
-//                    System.out.println("new leader id:" + newLeader);
-//                    int oldLeader = membershipTable.getLeaderID();
-//                    System.out.println("old leader id:" + oldLeader);
-//                    if (oldLeader != -1) { // there's a leader
-//                        membershipTable.switchLeaderShip(oldLeader, newLeader);//update new leader
-//                    } else {
-//                        System.out.println("weird ... no current leader right now");
-//                    }
-//                    inElection = false; // election ended on my end
-//                    System.out.println("election ended");
-//                }
-//            }
+                if (newLeader == -1) {// if winner is -1 ... its a simple election response, still in election
+                    System.out.println("In Election, receiving election msg from broker " + senderId);
+                } else { // if winner is not -1 ... we have a winner
+                    System.out.println("new leader id:" + newLeader);
+                    int oldLeader = membershipTable.getLeaderID();
+                    System.out.println("old leader id:" + oldLeader);
+                    if (oldLeader != -1) { // there's a leader
+                        membershipTable.switchLeaderShip(oldLeader, newLeader);//update new leader
+                    } else {
+                        System.out.println("weird ... no current leader right now");
+                    }
+                    inElection = false; // election ended on my end
+                    System.out.println("election ended");
+                }
+            }
 
         // if no response within timeout
         } else {

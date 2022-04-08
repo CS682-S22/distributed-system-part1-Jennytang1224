@@ -1,4 +1,5 @@
 import dsd.pubsub.protos.HeartBeatMessage;
+import dsd.pubsub.protos.Resp;
 import dsd.pubsub.protos.Response;
 
 import java.io.IOException;
@@ -43,11 +44,8 @@ class HeartBeatSender extends TimerTask implements Runnable {
     public void run() {
         while (sending) {
             //send heartbeat msg
-            Response.OneResponse heartBeatMessage = Response.OneResponse.newBuilder()
-                    .setHeartBeat(Response.HeartBeat.newBuilder().setSenderID(brokerID).build()).build();
+            Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
             conn.send(heartBeatMessage.toByteArray());
-
-
 
             //start listening for response
             HeartBeatListener heartBeatlistener = new HeartBeatListener(conn, membershipTable, peerID, sending);

@@ -16,17 +16,6 @@ public class FailureDetector {
             System.out.println("exceed timeout, assume peer: " + peerID + " is dead ");
             if (membershipTable.getMemberInfo(peerID).isLeader) { // leader is dead
                 //if peerid is leader, send initial election msg and wait for election response
-
-                // bully election .. need another class
-//                        inElection = true;
-//                        Thread th = new Thread(new BullyElection(brokerID, membershipTable, connMap)); // oldLeader, membershipTable
-//                        th.start();
-//                        try {
-//                            th.join();
-//                        } catch (InterruptedException e) {
-//                            e.printStackTrace();
-//                        }
-
                 membershipTable.switchLeaderShip(peerID, peerID + 1); // naively choosing next smallest id, change later
             } else { // if peerid is follower, update table  - mark dead
                 membershipTable.markDead(peerID);
@@ -36,11 +25,10 @@ public class FailureDetector {
             membershipTable.print();
             System.out.println(" ");
         }
-//
-//        else{// if expecting election msg, but nothing
-//            // mark the peer is dead
-//            membershipTable.markDead(peerID);
-//        }
 
+        else{// if expecting election msg, but nothing
+            // mark the peer is dead
+            membershipTable.markDead(peerID);
+        }
     }
 }
