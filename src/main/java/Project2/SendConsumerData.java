@@ -1,3 +1,5 @@
+package Project2;
+
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.MessageInfo;
 
@@ -45,7 +47,7 @@ public class SendConsumerData implements Runnable{
             }
             topic = d.getTopic();
             startingPosition = d.getOffset();
-            System.out.println("Broker: " + brokerID + " -> Consumer subscribed to: " + topic + ", at position: " + startingPosition);
+            System.out.println("Broker: " + brokerID + " -> Project2.Consumer subscribed to: " + topic + ", at position: " + startingPosition);
 
             System.out.println("consumer topic map: " + topicMap);
             if (!topicMap.containsKey(topic)) {

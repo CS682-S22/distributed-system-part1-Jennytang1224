@@ -1,3 +1,5 @@
+package Project2;
+
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.MessageInfo;
 import dsd.pubsub.protos.PeerInfo;
@@ -148,7 +150,7 @@ public class Consumer {
                         if(id >= maxPosition){
                             maxPosition = id;
                         }
-                        System.out.println(" ---> Consumer added a record to the blocking queue...");
+                        System.out.println(" ---> Project2.Consumer added a record to the blocking queue...");
                     } catch (InvalidProtocolBufferException e) {
                         e.printStackTrace();
                     }

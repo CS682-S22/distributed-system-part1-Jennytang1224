@@ -1,3 +1,5 @@
+package Project2;
+
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.PeerInfo;
 import java.io.*;

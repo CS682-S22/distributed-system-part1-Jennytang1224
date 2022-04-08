@@ -1,3 +1,5 @@
+package Project2;
+
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.MessageInfo;
@@ -21,8 +23,8 @@ public class ReceiveProducerMessage implements Runnable{
     private HashMap<String, Integer> counterMap;
     private static HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
 
-    public ReceiveProducerMessage( byte[] recordBytes, int messageCounter,
-                                   int offsetInMem, int numOfBrokers, int numOfPartitions, HashMap<Integer, Connection> connMap, HashMap<String, Integer> counterMap) {
+    public ReceiveProducerMessage(byte[] recordBytes, int messageCounter,
+                                  int offsetInMem, int numOfBrokers, int numOfPartitions, HashMap<Integer, Connection> connMap, HashMap<String, Integer> counterMap) {
         this.recordBytes = recordBytes;
         this.messageCounter = messageCounter;
         this.offsetInMem = offsetInMem;

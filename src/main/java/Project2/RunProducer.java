@@ -1,3 +1,5 @@
+package Project2;
+
 import com.google.protobuf.ByteString;
 import dsd.pubsub.protos.MessageInfo;
 import java.io.BufferedReader;
