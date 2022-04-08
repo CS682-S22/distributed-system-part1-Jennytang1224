@@ -23,12 +23,12 @@ public class MembershipTable {
     // add a new broker to the table
     public void put(int id, MemberInfo memberInfo){
         if(membershipTable.size() != 0) {
-            int newId = createLowestId();
-            System.out.println("new Id: " + newId);
+            int newId = createHighestId();
+//            System.out.println("new Id: " + newId);
             membershipTable.put(newId, memberInfo);
         }else{
             membershipTable.put(id, memberInfo);
-            System.out.println("leader new Id: " + id);
+//            System.out.println("leader new Id: " + id);
 
         }
 
@@ -49,9 +49,10 @@ public class MembershipTable {
     }
 
 
-    // create a lowest id for the new item in the table
-    public int createLowestId(){
-        return ((int) membershipTable.keySet().toArray()[0]) - 1;
+    // create a highest id for the new item in the table
+    public int createHighestId(){
+        int lastIdx = membershipTable.size();
+        return ((int) membershipTable.keySet().toArray()[lastIdx-1] + 1);
     }
 
     //get member info by id

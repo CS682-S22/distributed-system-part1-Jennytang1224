@@ -11,10 +11,12 @@ public class Connection {
     private DataInputStream input;
     private DataOutputStream output;
     private int receiverCounter = 0;
+    private boolean alive;
 
-    public Connection(String hostName, int port){
+    public Connection(String hostName, int port, boolean alive){
         this.hostName = hostName;
         this.port = port;
+        this.alive = alive;
         socket = null;
         try {
             socket = new Socket(this.hostName, this.port);
@@ -22,7 +24,11 @@ public class Connection {
             output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         } catch (IOException e) {
            // e.printStackTrace();
-            System.out.println("(This broker is NOT in use)");
+            if(socket == null){
+                this.alive = false;
+                System.out.println("(This broker is NOT in use)");
+            }
+
         }
     }
 
@@ -35,6 +41,11 @@ public class Connection {
            // e.printStackTrace();
             System.out.println("(This broker is NOT in use)");
         }
+    }
+
+
+    public boolean getAlive(){
+        return alive;
     }
 
     /**

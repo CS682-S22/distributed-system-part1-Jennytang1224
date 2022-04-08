@@ -3,7 +3,7 @@ import java.util.List;
 
 public class RunLeaderBasedBroker {
     public static void main(String[] args) {
-        List<Object> maps = Utilities.readConfig();
+        List<Object> maps = Utilities.readBrokerConfig("files/brokerConfig.json");
         IPMap ipMap = (IPMap) maps.get(0);
         PortMap portMap = (PortMap) maps.get(1);
         String brokerHostName = Utilities.getHostName();
