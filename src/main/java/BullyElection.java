@@ -1,6 +1,4 @@
-import dsd.pubsub.protos.ElectionMessage;
-import dsd.pubsub.protos.HeartBeatMessage;
-import dsd.pubsub.protos.Response;
+import dsd.pubsub.protos.Resp;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -12,89 +10,65 @@ public class BullyElection {
     MembershipTable membershipTable;
     HashMap<Integer, Connection> connMap;
     int retires = 3;
-    private CS601BlockingQueue<Response.OneResponse> bq;
+    private CS601BlockingQueue<Resp.Response> bq;
     private ExecutorService executor;
     boolean isThereHigherIDBroker = false;
+    Connection conn;
+    int winnerId = -1;
+    int peerCounter = 0; // # of peers you send election msg to
 
 
-
-    public BullyElection(int brokerId, MembershipTable membershipTable, HashMap<Integer, Connection> connMap) {
+    public BullyElection(int brokerId, MembershipTable membershipTable, HashMap<Integer, Connection> connMap, Connection conn) {
         this.brokerId = brokerId;
         this.membershipTable = membershipTable;
         this.connMap = connMap;
         this.bq = new CS601BlockingQueue<>(1);
         this.executor = Executors.newSingleThreadExecutor();
+        this.conn = conn;
+    }
 
-        // while listening if receive election msg from lower id broker, respond, start it's own election process
-        // receiver thread
-
+    public int getPeerCounter(){
+        return peerCounter;
     }
 
 
     public void run() {
-        //this broker send all higher-id brokers msg and wait for response
-        int winnerId = -1;
-        for (int peerID: connMap.keySet()){
-            if((membershipTable.getMemberInfo(peerID).isAlive) && (peerID > brokerId)) {
+        //this broker send election msg to all lower-id brokers and wait for election response
 
+        for (int peerID : connMap.keySet()) {
+            if ((membershipTable.getMemberInfo(peerID).isAlive) && (peerID < brokerId)) {
                 //get connection between this broker and the other broker
                 Connection conn = connMap.get(peerID);
 
                 //draft election msg
-                Runnable add = () -> {
-                    try {
-                        byte[] result = conn.receive();
-                        if (result != null) {
-                            bq.put(Response.OneResponse.parseFrom(result));
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                };
-                Response.OneResponse electionMessage = Response.OneResponse.newBuilder()
-                        .setElection(Response.Election.newBuilder()
+                Resp.Response electionMessage = Resp.Response.newBuilder()
+                        .setType("election")
                         .setSenderID(brokerId)
-                        .setWinnerID(winnerId).build()).build();
+                        .setWinnerID(winnerId).build();
                 conn.send(electionMessage.toByteArray()); // send election message
+                peerCounter++;
 
-                // timeout for election response
-                executor.execute(add);
-                Response.OneResponse f;
-                int replyingBrokerId = -1;
-                f = bq.poll(1000 * retires);
-                Response.Election e = f.getElection();
 
-                if (e != null) { // received a pack within  timeout
-                    replyingBrokerId = e.getSenderID();
-                    System.out.println("received election response from broker: " + replyingBrokerId);
-                    isThereHigherIDBroker = true;
-                    break; //if there's one response, this broker will stop election and wait for notification
-                }
-                else{
-                    // the receiver broker is dead, update the map
-                    membershipTable.markDead(peerID);
-                }
+
+                //if no any response, meaning this broker is the lowest-id living broker,
+                // claim leadership notify others
+//                if (!isThereHigherIDBroker) {
+//                    winnerId = brokerId;
+//                    for (int brokerID : connMap.keySet()) {
+//                        if ((membershipTable.getMemberInfo(brokerID).isAlive)) { // only notify all living brokers
+//                            //get connection between this broker and the
+//                            Connection conn = connMap.get(brokerID);
+//                            Response.OneResponse electionMessage = Response.OneResponse.newBuilder()
+//                                    .setElection(Response.Election.newBuilder()
+//                                            .setSenderID(brokerId)
+//                                            .setWinnerID(winnerId).build()).build();
+//                            conn.send(electionMessage.toByteArray()); // send election message notify i am the winner
+//                        }
+//                    }
+//                }
             }
-        }
 
-        //if no any response, meaning this broker is the highest-id living broker,
-        // claim leadership notify others
-        if(!isThereHigherIDBroker){
-            winnerId = brokerId;
-            for (int brokerID: connMap.keySet()) {
-                if ((membershipTable.getMemberInfo(brokerID).isAlive)) { // only notify all living brokers
-                    //get connection between this broker and the
-                    Connection conn = connMap.get(brokerID);
-                    Response.OneResponse electionMessage = Response.OneResponse.newBuilder()
-                            .setElection(Response.Election.newBuilder()
-                                    .setSenderID(brokerId)
-                                    .setWinnerID(winnerId).build()).build();
-                    conn.send(electionMessage.toByteArray()); // send election message notify i am the winner
-                }
-            }
+
         }
     }
-
-
-    //inner class for receiver
 }

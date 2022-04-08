@@ -1,9 +1,8 @@
-import com.google.protobuf.InvalidProtocolBufferException;
-import dsd.pubsub.protos.HeartBeatMessage;
 import dsd.pubsub.protos.Resp;
 import dsd.pubsub.protos.Response;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -15,20 +14,23 @@ public class HeartBeatListener implements Runnable{
     private ExecutorService executor;
     int delay = 1000;
     int retires = 3;
-    Response.OneResponse f;
     int peerID;
     boolean sending;
     boolean inElection = false;
+    int brokerID;
+    private HashMap<Integer, Connection> connMap;
 
 
-
-    public HeartBeatListener(Connection conn, MembershipTable membershipTable, int peerID, boolean sending) {
+    public HeartBeatListener(Connection conn, MembershipTable membershipTable, int peerID, boolean sending,
+                             int brokerID, HashMap<Integer, Connection> connMap){
        this.conn = conn;
        this.membershipTable = membershipTable;
        this.peerID = peerID;
        this.sending = sending;
        this.executor = Executors.newSingleThreadExecutor();
        this.bq = new CS601BlockingQueue<>(1);
+       this.brokerID = brokerID;
+       this.connMap = connMap;
     }
 
     public boolean getSending(){
@@ -39,11 +41,7 @@ public class HeartBeatListener implements Runnable{
     //if no hb response from leader, enter election and send initial election msg, wait for election response or decision
     @Override
     public void run() {
-
         Resp.Response f;
-        Response.HeartBeat heartBeat;
-        Response.Election election;
-
         Runnable add = () -> {
             try {
                 byte[] result = conn.receive();
@@ -61,7 +59,10 @@ public class HeartBeatListener implements Runnable{
 
         // if there's response within timeout
         if (f != null) {
+
             //check if f is heartbeat or election message
+            System.out.println("type in listener: " + f.getType());
+
             if (f.getType().equals("heartbeat")){
                 inElection = false;
             } else if (f.getType().equals("election")) {
@@ -81,8 +82,11 @@ public class HeartBeatListener implements Runnable{
                 int newLeader = f.getWinnerID();
 
                 if (newLeader == -1) {// if winner is -1 ... its a simple election response, still in election
-                    System.out.println("In Election, receiving election msg from broker " + senderId);
-                } else { // if winner is not -1 ... we have a winner
+                    System.out.println("In Election, receiving election msg from the lower id broker " + senderId);
+                    // me can stop election nc there's someone more qualified than me to be the leader
+                    // now waiting for election decision
+                }
+                else { // if winner is not -1 ... we have a winner
                     System.out.println("new leader id:" + newLeader);
                     int oldLeader = membershipTable.getLeaderID();
                     System.out.println("old leader id:" + oldLeader);
@@ -96,11 +100,10 @@ public class HeartBeatListener implements Runnable{
                 }
             }
 
-        // if no response within timeout
-        } else {
-            // failure detection
-            FailureDetector failureDetector = new FailureDetector(membershipTable, peerID, inElection, conn);
+        } else { // if no response within timeout
+            FailureDetector failureDetector = new FailureDetector(membershipTable, peerID, inElection, conn, brokerID, connMap);
             failureDetector.run();
+            inElection = failureDetector.getElectionStatus();
 
             //stop the connection since the peer is dead
             sending = false;

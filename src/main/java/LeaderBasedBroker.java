@@ -162,6 +162,7 @@ public class LeaderBasedBroker {
                                 exception.printStackTrace();
                             }
                             if(f != null) {
+                                System.out.println("type in broker: " + f.getType());
                                 if (f.getType().equals("heartbeat")) {
                                     inElection = false;
                                 } else if (f.getType().equals("election")) {
@@ -198,7 +199,8 @@ public class LeaderBasedBroker {
                                         inElection = false; // election ended on my end
                                         System.out.println("election ended on broker " + brokerID + " side!");
 
-                                    } else { //other sends election msg to me, me needs reply to other broker
+                                    }
+                                    else { //other sends election msg to me, me needs reply to other broker
                                         Resp.Response electionResponse = Resp.Response.newBuilder()
                                                 .setSenderID(brokerID).setWinnerID(-1).build();
                                         conn.send(electionResponse.toByteArray());
