@@ -99,14 +99,13 @@ public class LeaderBasedBroker {
         int counter = 0;
         private String type;
         int brokerID;
+        int peerID;
 
         public Receiver(String name, int port, Connection conn) {
             this.name = name;
             this.port = port;
             this.conn = conn;
             brokerID = Utilities.getBrokerIDFromFile(name, String.valueOf(port), "files/brokerConfig.json");
-
-
         }
 
         @Override
@@ -130,7 +129,7 @@ public class LeaderBasedBroker {
                         System.out.println("Peer type: " + type);
                         peerHostName = p.getHostName();
                         peerPort = p.getPortNumber();
-                        int peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
+                        peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
 
                         if (type.equals("producer")) { // only bc this broker is a leader
                             // get the messageInfo though socket
@@ -164,6 +163,13 @@ public class LeaderBasedBroker {
                             if(f != null) {
                                 System.out.println("type in broker: " + f.getType());
                                 if (f.getType().equals("heartbeat")) {
+//                                    if(inElection){
+//                                        try {
+//                                            Thread.sleep(4000);
+//                                        } catch (InterruptedException e) {
+//                                            e.printStackTrace();
+//                                        }
+//                                    }
                                     inElection = false;
                                 } else if (f.getType().equals("election")) {
                                     inElection = true;
@@ -198,13 +204,20 @@ public class LeaderBasedBroker {
                                         }
                                         inElection = false; // election ended on my end
                                         System.out.println("election ended on broker " + brokerID + " side!");
-
                                     }
                                     else { //other sends election msg to me, me needs reply to other broker
-                                        Resp.Response electionResponse = Resp.Response.newBuilder()
+                                        Resp.Response electionResponse = Resp.Response.newBuilder().setType("election")
                                                 .setSenderID(brokerID).setWinnerID(-1).build();
                                         conn.send(electionResponse.toByteArray());
-                                        System.out.println("broker " + brokerID + "reply to broker " + senderId  + " election msg");
+//                                        inElection = true;
+                                        System.out.println("broker " + brokerID + " reply to broker " + senderId  + " election msg...");
+
+
+//                                        //start listening for response
+//                                        boolean sending = true;
+//                                        HeartBeatListener heartBeatlistener = new HeartBeatListener(conn, membershipTable, peerID, sending, brokerID, connMap);
+//                                        heartBeatlistener.run();
+
                                     }
                                 }
                             }
@@ -299,7 +312,9 @@ public class LeaderBasedBroker {
                 // send heartbeat to others
                 if(isAlive = true) {
                     System.out.println("Now sending heartbeat to " + peerID + "...\n");
-                    Thread heartbeatSender = new Thread(new HeartBeatSender(this.hostName, String.valueOf(this.port), connection, peerHostName, peerPort, connMap, membershipTable));
+                    Thread heartbeatSender = new Thread(new HeartBeatSender(this.hostName,
+                            String.valueOf(this.port), connection, peerHostName, peerPort,
+                            connMap, membershipTable, inElection));
                     heartbeatSender.start();
                 }
                 brokerCounter++;  // next broker in the map

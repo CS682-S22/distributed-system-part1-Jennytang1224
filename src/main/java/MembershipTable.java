@@ -36,6 +36,9 @@ public class MembershipTable {
         membershipTable.get(id).setAlive(false);
     }
 
+    public void cancelLeadership(int leaderID){
+        membershipTable.get(leaderID).setLeader(false);
+    }
 
     // mark new leader
     public void switchLeaderShip(int oldLeaderId, int newLeaderId){
