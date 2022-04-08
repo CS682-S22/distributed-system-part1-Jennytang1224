@@ -107,7 +107,6 @@ public class HeartBeatListener implements Runnable{
                         System.out.println("weird ... no current leader right now");
                     }
 
-
                     try {
                         Thread.sleep(3000);
                     } catch (InterruptedException e) {

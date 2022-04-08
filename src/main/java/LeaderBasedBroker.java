@@ -86,6 +86,10 @@ public class LeaderBasedBroker {
         Thread connector = new Thread(new Connector(this.hostName, this.port));
         connector.start();
 
+//
+//        Connector c = new Connector(this.hostName, this.port);
+//        c.run();
+
     }
 
     /**
@@ -191,7 +195,7 @@ public class LeaderBasedBroker {
                                 else{ // if election msg
                                     int senderId = f.getSenderID();
                                     int newLeader = f.getWinnerID();
-                                    System.out.println("receiving election msg from peer " + senderId);
+                                    System.out.println(" -> > > receiving election msg from peer " + senderId);
 
                                     if (newLeader != -1) {//if other inform me new leader, me updated table
                                         System.out.println("new leader id:" + newLeader);
@@ -210,7 +214,7 @@ public class LeaderBasedBroker {
                                                 .setSenderID(brokerID).setWinnerID(-1).build();
                                         conn.send(electionResponse.toByteArray());
 //                                        inElection = true;
-                                        System.out.println("broker " + brokerID + " reply to broker " + senderId  + " election msg...");
+                                        System.out.println("-> > >broker " + brokerID + " reply to broker " + senderId  + " election msg...");
 
 
 //                                        //start listening for response

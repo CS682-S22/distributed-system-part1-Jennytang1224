@@ -44,27 +44,22 @@ class HeartBeatSender extends TimerTask implements Runnable {
                 Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
                 conn.send(heartBeatMessage.toByteArray());
             }
+
             //start listening for response
             HeartBeatListener heartBeatlistener = new HeartBeatListener(conn, membershipTable, peerID, sending, brokerID, connMap, inElection);
             heartBeatlistener.run();
 
-
             sending = heartBeatlistener.getSending();
             System.out.println("***Sending: " + sending);
-            if(heartBeatlistener.getElectionStatus()){
-                inElection = true;
-            } else{
-                inElection = false;
-            }
+            inElection = heartBeatlistener.getElectionStatus();
             System.out.println("***Election: " + inElection);
-//            if(!sending && inElection){ // waiting foe announcement
-//                try {
-//                    Thread.sleep(4000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//                System.out.println("waited to see if there's other broker response to my election msg");
-//            }
+
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
         }
     }
 
