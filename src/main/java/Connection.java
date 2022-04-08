@@ -21,7 +21,8 @@ public class Connection {
             input = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         } catch (IOException e) {
-            e.printStackTrace();
+           // e.printStackTrace();
+            System.out.println("(This broker is NOT in use)");
         }
     }
 
@@ -31,7 +32,8 @@ public class Connection {
             this.input = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             this.output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         } catch (IOException e) {
-            e.printStackTrace();
+           // e.printStackTrace();
+            System.out.println("(This broker is NOT in use)");
         }
     }
 
@@ -44,6 +46,9 @@ public class Connection {
         byte[] buffer = null;
 
         try {
+            if(input == null){
+                return null;
+            }
             int length = input.readInt();
             if(length > 0) {
                 buffer = new byte[length];
@@ -74,6 +79,10 @@ public class Connection {
      */
     public void writeToSocket(byte[] message){
         try {
+            if(this.output == null){
+                System.out.println("(This broker is NOT in use)");
+                return;
+            }
             this.output.writeInt(message.length);
             this.output.write(message);
             this.output.flush();

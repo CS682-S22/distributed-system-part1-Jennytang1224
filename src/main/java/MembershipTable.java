@@ -63,6 +63,17 @@ public class MembershipTable {
         return membershipTable.size();
     }
 
+    public int getLeaderID(){
+        int leaderId = -1;
+        for(int key: membershipTable.keySet()) {
+            memberInfo = membershipTable.get(key);
+            if(memberInfo.isLeader){
+                leaderId = key;
+                break;
+            }
+        }
+        return leaderId;
+    }
 
     public void print() {
         for(int key: membershipTable.keySet()){

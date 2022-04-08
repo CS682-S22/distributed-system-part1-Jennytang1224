@@ -325,6 +325,7 @@ public class Utilities {
             System.out.println("fail to read the file");
             e.printStackTrace();
         }
+
         return brokerID;
     }
 
