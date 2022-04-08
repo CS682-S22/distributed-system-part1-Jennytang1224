@@ -49,12 +49,12 @@
 
                 <executions>
                     <execution>
-                        <id>LoadBalancer</id>
+                        <id>Project2.LoadBalancer</id>
                         <goals>
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>RunLoadBalancer</mainClass>
+                            <mainClass>Project2.RunLoadBalancer</mainClass>
                         </configuration>
                     </execution>
                     <execution>
@@ -63,16 +63,16 @@
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>RunBroker</mainClass>
+                            <mainClass>Project2.RunBroker</mainClass>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>producer</id>
+                        <id>leaderBasedProducer</id>
                         <goals>
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>RunProducer</mainClass>
+                            <mainClass>Project2.RunProducer</mainClass>
                         </configuration>
                     </execution>
                     <execution>
@@ -81,7 +81,7 @@
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>RunConsumer</mainClass>
+                            <mainClass>Project2.RunConsumer</mainClass>
                         </configuration>
                     </execution>
                 </executions>

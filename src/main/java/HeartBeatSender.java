@@ -12,7 +12,7 @@ class HeartBeatSender extends TimerTask implements Runnable {
     private String name;
     private String port;
     private Connection conn;
-    boolean sending = true;
+    volatile boolean sending = true;
     int brokerID;
 
     private String peerHostName;
@@ -20,7 +20,7 @@ class HeartBeatSender extends TimerTask implements Runnable {
     private int peerID;
     private HashMap<Integer, Connection> connMap;
     MembershipTable membershipTable;
-    boolean inElection;
+    volatile boolean inElection;
 
     public HeartBeatSender(String name, String port, Connection conn, String peerHostName, int peerPort,
                            HashMap<Integer, Connection> connMap, MembershipTable membershipTable, boolean inElection) {
@@ -39,8 +39,10 @@ class HeartBeatSender extends TimerTask implements Runnable {
     @Override
     public void run() {
         while (sending) {
+            System.out.println("inside sending, election: " + inElection);
             if(!inElection) { // if in election, do not send heartbeat
                 //send heartbeat msg
+
                 Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
                 conn.send(heartBeatMessage.toByteArray());
             }

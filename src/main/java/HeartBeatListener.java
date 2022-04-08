@@ -1,4 +1,5 @@
 import dsd.pubsub.protos.Resp;
+import dsd.pubsub.protos.Response;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -14,12 +15,12 @@ public class HeartBeatListener implements Runnable{
     int delay = 1000;
     int retires = 3;
     int peerID;
-    boolean sending;
-    boolean inElection;
+    volatile boolean sending;
+    volatile boolean inElection;
     int brokerID;
     private HashMap<Integer, Connection> connMap;
     int currentLeaderBeforeMarkDead;
-    boolean electionStatus;
+    volatile boolean electionStatus;
 
 
 
@@ -74,7 +75,7 @@ public class HeartBeatListener implements Runnable{
             //check if f is heartbeat or election message
             System.out.println("type in listener: " + f.getType());
             if (f.getType().equals("heartbeat")){
-                inElection = false;
+               // inElection = false;
             } else if (f.getType().equals("election")) {
                 inElection = true;
             } else{
@@ -92,9 +93,10 @@ public class HeartBeatListener implements Runnable{
 
                 if (newLeader == -1) {// if winner is -1 ... its a simple election response, still in election
                     System.out.println("In Election, receiving election response from the lower id broker " + senderId);
-                    // me can stop election nc there's someone more qualified than me to be the leader
+                    // me can stop election Bc there's someone more qualified than me to be the leader
                     System.out.println("now waiting for election decision from other broker");
-                   // sending = false;
+                    electionStatus = true;
+
                 }
                 else { // if winner is not -1 ... we have a winner
                     System.out.println("new leader id:" + newLeader);
@@ -112,7 +114,7 @@ public class HeartBeatListener implements Runnable{
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    this.inElection = false; // election ended on my end
+                    electionStatus = false; // election ended on my end
                     System.out.println("election ended");
                 }
             }

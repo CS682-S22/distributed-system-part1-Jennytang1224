@@ -41,7 +41,7 @@ public class LeaderBasedBroker {
     private int brokerCounter = 1;
     static HashMap<Integer, Connection> connMap = new HashMap<>();
     private static MembershipTable membershipTable = new MembershipTable();
-    static boolean inElection = false;
+    static volatile boolean inElection = false;
 
 
     public LeaderBasedBroker(String hostName, int port) {
@@ -174,7 +174,7 @@ public class LeaderBasedBroker {
 //                                            e.printStackTrace();
 //                                        }
 //                                    }
-                                    inElection = false;
+                                   // inElection = false;
                                 } else if (f.getType().equals("election")) {
                                     inElection = true;
                                 } else {
@@ -206,7 +206,7 @@ public class LeaderBasedBroker {
                                         } else {
                                             System.out.println("weird ... no current leader right now");
                                         }
-                                        inElection = false; // election ended on my end
+                                    //    inElection = false; // election ended on my end
                                         System.out.println("election ended on broker " + brokerID + " side!");
                                     }
                                     else { //other sends election msg to me, me needs reply to other broker
@@ -320,6 +320,7 @@ public class LeaderBasedBroker {
                             String.valueOf(this.port), connection, peerHostName, peerPort,
                             connMap, membershipTable, inElection));
                     heartbeatSender.start();
+
                 }
                 brokerCounter++;  // next broker in the map
             }

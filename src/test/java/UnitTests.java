@@ -1,18 +1,14 @@
+import Project2.Consumer;
+import Project2.DistributedBroker;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.MessageInfo;
 import dsd.pubsub.protos.PeerInfo;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -148,7 +144,7 @@ class UnitTests {
         }
         Connection connection = this.server.nextConnection(); // calls accept on server socket to block
         //Connection connection = new Connection(brokerHostName, brokerPort);
-        //  DistributedBroker.Receiver = new ReceiveProducerData(buffer, topicMapList, brokerID)
+        //  Project2.DistributedBroker.Receiver = new Project2.ReceiveProducerData(buffer, topicMapList, brokerID)
         byte[] buffer = connection.receive();
         System.out.println(buffer);
         assertEquals(broker.receiveMessageCounter(), 1);

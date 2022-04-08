@@ -30,7 +30,7 @@ public class LeaderBasedSendConsumerData implements Runnable{
         }
         String topic = d.getTopic();
         startingPosition = d.getOffset();
-        System.out.println("Consumer subscribed to: " + topic + ", at position: " + startingPosition);
+        System.out.println("Project2.Consumer subscribed to: " + topic + ", at position: " + startingPosition);
         //offset to id
         //   int id = Utilities.getIdByOffset(startingPosition, Utilities.offsetFilePath);
 
@@ -70,7 +70,7 @@ public class LeaderBasedSendConsumerData implements Runnable{
 //            newStartingPosition += size;
 //            System.out.println("new position: " + newStartingPosition);
 //
-//            Consumer consumer = new Consumer(connection, startingPosition);
+//            Project2.Consumer consumer = new Project2.Consumer(connection, startingPosition);
 //            consumer.subscribe(topic, startingPosition);
 
         notifyOtherBrokers();

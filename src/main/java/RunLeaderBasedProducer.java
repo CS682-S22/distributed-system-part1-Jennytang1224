@@ -1,11 +1,9 @@
 import com.google.protobuf.ByteString;
 import dsd.pubsub.protos.MessageInfo;
 
-import javax.sound.sampled.AudioFormat;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,7 +32,7 @@ public class RunLeaderBasedProducer {
 
         // Open a connection to the Broker by creating a new Producer object
         // send producer identity to broker
-        Producer producer = new Producer(brokerLocation);
+        LeaderBasedProducer leaderBasedProducer = new LeaderBasedProducer(brokerLocation);
 
         // for each data record, send topic, key and data
         ByteString data = null;
@@ -71,7 +69,7 @@ public class RunLeaderBasedProducer {
                                 .setOffset(offset)
                                 .build();
                         // producer send record to broker
-                        producer.send(record.toByteArray());
+                        leaderBasedProducer.send(record.toByteArray());
                         System.out.println("message has been send!");
                     }
                 }

@@ -6,7 +6,7 @@ import java.util.HashMap;
 public class FailureDetector {
     int peerID;
     MembershipTable membershipTable;
-    boolean inElection;
+    volatile boolean inElection;
     Connection conn;
     int brokerID;
     private HashMap<Integer, Connection> connMap;
@@ -59,6 +59,7 @@ public class FailureDetector {
         }
 
         else{ // if expecting election msg, but nothing
+            System.out.println("if expecting election msg, but nothing");
             membershipTable.markDead(peerID); // mark the peer is dead
             //   in the table, check if there's any lower id broker than me is alive, if not, im the leader
             for (int i = 1; i <= connMap.size(); i++) {
@@ -74,12 +75,13 @@ public class FailureDetector {
 
             if(!isThereLowerIDBroker) { // if no such broker exists, im the new leader!
                 announceNewLeadership();
-                inElection = false;
+//                inElection = false;
             }
         }
     }
 
     public void announceNewLeadership(){
+        System.out.println("update table and announce im the new leader");
         //update my table, make self as the leader
         membershipTable.switchLeaderShip(currentLeader, brokerID);
 

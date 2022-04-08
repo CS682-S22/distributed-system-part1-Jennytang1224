@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+//from ProtocolBuffersExample directory compile this as follows:
+//protoc --java_out=src/main/java/ protos/response.proto
+
+option java_package = "dsd.pubsub.protos";
+option java_outer_classname = "Response";
+
+message HeartBeat{
+  int32 senderID = 1;
+  int32 numOfRetires = 2;
+
+}
+
+message Election{
+  int32 senderID = 1;
+  int32 winnerID = 2;
+
+}
+
+message OneResponse{
+  oneof resp{
+    HeartBeat heartBeat = 1;
+    Election election = 2;
+  }
+}
+
+
+

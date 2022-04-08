@@ -4,7 +4,7 @@ import java.net.Socket;
 import java.util.List;
 
 //producer send data to broker
-public class Producer {
+public class LeaderBasedProducer {
     private String brokerLocation;
     private int brokerPort;
     private String brokerHostName;
@@ -14,7 +14,7 @@ public class Producer {
     private Connection connection;
 
 
-    public Producer(String brokerLocation) {
+    public LeaderBasedProducer(String brokerLocation) {
         this.brokerLocation = brokerLocation;
         this.brokerHostName =brokerLocation.split(":")[0];
         this.brokerPort = Integer.parseInt(brokerLocation.split(":")[1]);
