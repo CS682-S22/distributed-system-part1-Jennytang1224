@@ -1,15 +1,11 @@
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MembershipTable {
     int id;
     MemberInfo memberInfo;
-    HashMap<Integer, MemberInfo> membershipTable = new HashMap<>();
+    ConcurrentHashMap<Integer, MemberInfo> membershipTable = new ConcurrentHashMap<>();
 
-//    public MembershipTable(int id, MemberInfo memberInfo) {
-//        this.id = id;
-//        this.memberInfo = memberInfo;
-//        membershipTable = new HashMap<>();
-//    }
 
     public int getId() {
         return id;
