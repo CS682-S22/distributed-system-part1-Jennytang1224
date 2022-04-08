@@ -1,4 +1,5 @@
 import dsd.pubsub.protos.HeartBeatMessage;
+import dsd.pubsub.protos.Response;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -40,24 +41,17 @@ class HeartBeatSender extends TimerTask implements Runnable {
 
     @Override
     public void run() {
-        //constantly sending heart beat to other brokers
-        HeartBeatMessage.HeartBeat f;
-
-
         while (sending) {
-            HeartBeatMessage.HeartBeat heartBeatMessage = HeartBeatMessage.HeartBeat.newBuilder()
-                    .setSenderID(brokerID)
-                    .setNumOfRetires(0).build();
-            //  System.out.println("num of retires: " + retryCount);
-            // retryCount++;
             //send heartbeat msg
+            Response.OneResponse heartBeatMessage = Response.OneResponse.newBuilder()
+                    .setHeartBeat(Response.HeartBeat.newBuilder().setSenderID(brokerID).build()).build();
             conn.send(heartBeatMessage.toByteArray());
 
-            //hearBeatListener thread
+
+
+            //start listening for response
             HeartBeatListener heartBeatlistener = new HeartBeatListener(conn, membershipTable, peerID, sending);
-
             heartBeatlistener.run();
-
 
             try {
                 Thread.sleep(1000);
@@ -65,8 +59,6 @@ class HeartBeatSender extends TimerTask implements Runnable {
                 e.printStackTrace();
             }
             sending = heartBeatlistener.getSending();
-
-
         }
     }
 

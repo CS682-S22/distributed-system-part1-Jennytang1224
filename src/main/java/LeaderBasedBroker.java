@@ -3,6 +3,8 @@
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.HeartBeatMessage;
 import dsd.pubsub.protos.PeerInfo;
+import dsd.pubsub.protos.Resp;
+import dsd.pubsub.protos.Response;
 
 import javax.sound.sampled.LineListener;
 import java.io.*;
@@ -33,7 +35,7 @@ public class LeaderBasedBroker {
     static int peerPort;
     static int messageCounter = 0;
     static int offsetInMem = 0;
-    static int brokerID;
+    //static int brokerID;
     private String brokerConfigFile = "files/brokerConfig.json";
     private static int numOfBrokers = 5;
     private int brokerCounter = 1;
@@ -47,7 +49,7 @@ public class LeaderBasedBroker {
         this.port = port;
         this.topicList = new CopyOnWriteArrayList<>();
         this.topicMap = new HashMap<>();
-        brokerID = Utilities.getBrokerIDFromFile(hostName, String.valueOf(port), "files/brokerConfig.json");
+       // brokerID = Utilities.getBrokerIDFromFile(hostName, String.valueOf(port), "files/brokerConfig.json");
     }
 
 
@@ -98,11 +100,14 @@ public class LeaderBasedBroker {
         boolean receiving = true;
         int counter = 0;
         private String type;
+        int brokerID;
 
         public Receiver(String name, int port, Connection conn) {
             this.name = name;
             this.port = port;
             this.conn = conn;
+            brokerID = Utilities.getBrokerIDFromFile(name, String.valueOf(port), "files/brokerConfig.json");
+
 
         }
 
@@ -110,11 +115,11 @@ public class LeaderBasedBroker {
         public void run() {
             PeerInfo.Peer p = null;
             while (receiving) {
-                //   System.out.println("broker receiving data from connection ");
                 byte[] buffer = conn.receive();
                 if (buffer == null || buffer.length == 0) {
-                    // System.out.println("nothing received/ finished receiving");
-                } else {
+                    System.out.println("nothing has received");
+                }
+                else {
                     if (counter == 0) { // first mesg is peerinfo
                         try {
                             p = PeerInfo.Peer.parseFrom(buffer);
@@ -129,18 +134,13 @@ public class LeaderBasedBroker {
                         peerPort = p.getPortNumber();
                         int peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
 
-
                         if (type.equals("producer")) { // only bc this broker is a leader
                             // get the messageInfo though socket
                             System.out.println("this Broker now has connected to PRODUCER: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
-
                         } else if (type.equals("broker")) {
                             System.out.println("this broker NOW has connected to BROKER: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
-
-
-
                         }
 
                     } else { // when receiving producer data
@@ -154,37 +154,90 @@ public class LeaderBasedBroker {
                             }
                             counter++;
                             messageCounter++;
+
                         } else if (type.equals("broker")) {
-                            //if its heartbeat
-                            HeartBeatMessage.HeartBeat heartBeat = null;
-                            try {
-                                heartBeat = HeartBeatMessage.HeartBeat.parseFrom(buffer);
-                            } catch (InvalidProtocolBufferException e) {
-                                e.printStackTrace();
-                            }
-                            if(heartBeat !=null) {
-                                int senderId = heartBeat.getSenderID();
-                                System.out.println("receiving heartbeat from broker " + senderId + "...");
-
-                                // receive heartbeat from broker and response with its own id
-                                HeartBeatMessage.HeartBeat response = HeartBeatMessage.HeartBeat.newBuilder()
-                                        .setSenderID(brokerID)
-                                        .setNumOfRetires(0)
-                                        .build();
-                                conn.send(response.toByteArray());
-                            }
-
-//                             //check if this send is leader, replicate data other brokers
-//                            Thread th = new Thread(new LeaderBasedSendConsumerData(conn, buffer, topicMap));
-//                            th.start();
+                            // other send me heartbeat msg(me reply) / election(other inform new leader, me update table)/ election(other send election msg to me, needs reply to other broker )
+//                            Response.OneResponse f = null;
+//                            Response.HeartBeat heartBeat = null;
+//                            Response.Election election = null;
 //                            try {
-//                                th.join();
-//                            } catch (InterruptedException e) {
-//                                e.printStackTrace();
+//                                f = Response.OneResponse.parseFrom(buffer);
+//                            } catch (InvalidProtocolBufferException exception) {
+//                                exception.printStackTrace();
 //                            }
-                            counter++;
+//
+//                            Response.OneResponse.RespCase cases = f.getRespCase();
+//
+//                            switch(cases){
+//                                case HEARTBEAT: inElection = false;
+//                                case ELECTION: inElection = true;
+//                            }
+                            Resp.Response f = null;
+                            try {
+                                f = Resp.Response.parseFrom(buffer);
+                            } catch (InvalidProtocolBufferException exception) {
+                                exception.printStackTrace();
+                            }
+                            if(f != null){
 
-                        } else {
+                            }
+                            if(f.getType().equals("heartbeat"))
+
+                            System.out.println("election in receiver:" + inElection);
+                            if(!inElection) { // if its heartbeat, me reply
+                                //heartBeat = f.getHeartBeat();
+                                try {
+                                    heartBeat = Response.HeartBeat.parseFrom(buffer);
+                                } catch (InvalidProtocolBufferException e) {
+                                    e.printStackTrace();
+                                }
+                                if (heartBeat != null) {
+                                    int senderId = heartBeat.getSenderID();
+                                    System.out.println("broker " + brokerID + " receiving heartbeat from broker " + senderId + "...");
+                                    // receive heartbeat from broker and response with its own id
+                                    Response.OneResponse heartBeatResponse = Response.OneResponse.newBuilder()
+                                            .setHeartBeat(Response.HeartBeat.newBuilder().setSenderID(brokerID).build()).build();
+                                    conn.send(heartBeatResponse.toByteArray());
+                                }
+
+                            }
+
+
+
+//                            else{ // if election msg
+//                                //election = f.getElection();
+//                                try {
+//                                    election = Response.Election.parseFrom(buffer);
+//                                } catch (InvalidProtocolBufferException e) {
+//                                    e.printStackTrace();
+//                                }
+//                                int senderId = election.getSenderID();
+//                                int newLeader = election.getWinnerID();
+//                                System.out.println("receiving election msg from peer " + senderId);
+//
+//
+//                                if (newLeader != -1) {//if other inform me new leader, me updated table
+//                                    System.out.println("new leader id:" + newLeader);
+//                                    int oldLeader = membershipTable.getLeaderID();
+//                                    System.out.println("old leader id:" + oldLeader);
+//                                    if (oldLeader != -1) { // there's a leader
+//                                        membershipTable.switchLeaderShip(oldLeader, newLeader);//update new leader
+//                                    } else {
+//                                        System.out.println("weird ... no current leader right now");
+//                                    }
+//                                    inElection = false; // election ended on my end
+//                                    System.out.println("election ended on broker " + brokerID + " side!");
+//                                } else { //other sends election msg to me, me needs reply to other broker
+//                                    Response.OneResponse electionResponse = Response.OneResponse.newBuilder()
+//                                            .setElection(Response.Election.newBuilder().setSenderID(brokerID).setWinnerID(-1).build()).build();
+//                                    conn.send(electionResponse.toByteArray());
+//                                    System.out.println("broker " + brokerID + "reply to broker " + senderId  + " election msg");
+//                                }
+//                            }
+//
+                            counter++;
+                        }
+                            else {
                             System.out.println("invalid type, should be either producer or consumer");
                             // System.exit(-1);
                         }
@@ -201,9 +254,6 @@ public class LeaderBasedBroker {
     static class Connector implements Runnable {
         int brokerCounter = 1;
         private String brokerConfigFile = "files/brokerConfig.json";
-        private Socket socket;
-        private DataInputStream input;
-        private DataOutputStream output;
         Connection connection;
         String hostName;
         int port;
@@ -230,14 +280,7 @@ public class LeaderBasedBroker {
                 int peerPort = Integer.parseInt(portMap.getPortById(String.valueOf(brokerCounter)));
                 peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
 
-              //     if (brokerCounter < brokerID) {
-//                try {
-//                    socket = new Socket(peerHostName, peerPort);
-//                    connection = new Connection(socket);
                 connection = new Connection(peerHostName, peerPort, isAlive); // connection to other peer
-//                } catch (IOException e) {
-//                    // e.printStackTrace();
-//                }
 
                 //add this broker to membership table
                 isAlive = connection.getAlive();
@@ -286,8 +329,6 @@ public class LeaderBasedBroker {
                     Thread heartbeatSender = new Thread(new HeartBeatSender(this.hostName, String.valueOf(this.port), connection, peerHostName, peerPort, connMap, membershipTable));
                     heartbeatSender.start();
                 }
-
-
                 brokerCounter++;  // next broker in the map
             }
 
