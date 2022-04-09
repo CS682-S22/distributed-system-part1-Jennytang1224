@@ -1,5 +1,6 @@
 
 import dsd.pubsub.protos.Resp;
+import dsd.pubsub.protos.Response;
 
 import javax.sound.sampled.LineListener;
 import java.net.InetAddress;
@@ -20,7 +21,8 @@ class HeartBeatSender extends TimerTask implements Runnable {
     private int peerID;
     private HashMap<Integer, Connection> connMap;
     MembershipTable membershipTable;
-    volatile boolean inElection;
+    volatile boolean inElection = false;
+
 
     public HeartBeatSender(String name, String port, Connection conn, String peerHostName, int peerPort,
                            HashMap<Integer, Connection> connMap, MembershipTable membershipTable, boolean inElection) {
@@ -38,32 +40,43 @@ class HeartBeatSender extends TimerTask implements Runnable {
 
     @Override
     public void run() {
+
+        //start listening for response
+
+
+        HeartBeatListener heartBeatlistener = new HeartBeatListener(conn, membershipTable, peerID, sending, brokerID, connMap, inElection);
+        Thread th = new Thread(heartBeatlistener);
+        th.start();
+
         while (sending) {
+
             System.out.println("inside sending, election: " + inElection);
+
             if(!inElection) { // if in election, do not send heartbeat
                 //send heartbeat msg
-
                 Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
                 conn.send(heartBeatMessage.toByteArray());
             }
-
-            //start listening for response
-            HeartBeatListener heartBeatlistener = new HeartBeatListener(conn, membershipTable, peerID, sending, brokerID, connMap, inElection);
-            heartBeatlistener.run();
-
             sending = heartBeatlistener.getSending();
-            System.out.println("***Sending: " + sending);
+            System.out.println("******Sending: " + sending);
             inElection = heartBeatlistener.getElectionStatus();
-            System.out.println("***Election: " + inElection);
+            System.out.println("******Election: " + inElection);
 
             try {
-                Thread.sleep(2000);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
         }
+
+
     }
+
+    public boolean getElectionStatus(){
+        return inElection;
+    }
+
 
 
 }

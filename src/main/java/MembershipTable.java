@@ -1,4 +1,3 @@
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MembershipTable {
@@ -28,6 +27,10 @@ public class MembershipTable {
 
         }
 
+    }
+
+    public ConcurrentHashMap.KeySetView<Integer, MemberInfo> getKeys(){
+       return membershipTable.keySet();
     }
 
 

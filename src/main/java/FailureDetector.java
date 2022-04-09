@@ -40,7 +40,7 @@ public class FailureDetector {
             if (membershipTable.getMemberInfo(peerID).isLeader) { // leader is dead
                 //if peerid is leader, bully (send initial election msg and wait for election response)
                 membershipTable.markDead(peerID);
-                membershipTable.cancelLeadership(peerID);
+               // membershipTable.cancelLeadership(peerID);
 
                 BullyElection bully = new BullyElection(brokerID, membershipTable, connMap, conn);
                 bully.run();

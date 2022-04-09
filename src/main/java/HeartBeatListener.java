@@ -12,7 +12,7 @@ public class HeartBeatListener implements Runnable{
     MembershipTable membershipTable;
     private CS601BlockingQueue<Resp.Response> bq;
     private ExecutorService executor;
-    int delay = 1000;
+    int delay = 500;
     int retires = 3;
     int peerID;
     volatile boolean sending;
@@ -21,6 +21,7 @@ public class HeartBeatListener implements Runnable{
     private HashMap<Integer, Connection> connMap;
     int currentLeaderBeforeMarkDead;
     volatile boolean electionStatus;
+    boolean listening = true;
 
 
 
@@ -42,7 +43,7 @@ public class HeartBeatListener implements Runnable{
     }
 
     public boolean getElectionStatus(){
-        return electionStatus;
+        return inElection;
     }
 
 
@@ -50,86 +51,90 @@ public class HeartBeatListener implements Runnable{
         this.inElection = inElection;
     }
 
-    //after sending out hearbeat msg -> expecting heartbeat response
+    //after sending out heartbeat msg -> expecting heartbeat response
     //if no hb response from leader, enter election and send initial election msg, wait for election response or decision
     @Override
     public void run() {
-        Resp.Response f;
-        Runnable add = () -> {
-            try {
-                byte[] result = conn.receive();
-                if (result != null) {
-                    bq.put(Resp.Response.parseFrom(result));
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        };
-
-        executor.execute(add);
-        int replyingBrokerId = -1;
-        f = bq.poll(delay * retires);
-
-        // if there's response within timeout
-        if (f != null) {
-            //check if f is heartbeat or election message
-            System.out.println("type in listener: " + f.getType());
-            if (f.getType().equals("heartbeat")){
-               // inElection = false;
-            } else if (f.getType().equals("election")) {
-                inElection = true;
-            } else{
-                System.out.println("wrong type");
-            }
-
-            if(!inElection) {// if its heartbeat response
-              //  heartBeat = f.getHeartBeat();
-                replyingBrokerId = f.getSenderID();
-                System.out.println("receiving heartbeat response from peer: " + replyingBrokerId);
-            }
-            else {// if its election response
-                int senderId = f.getSenderID();
-                int newLeader = f.getWinnerID();
-
-                if (newLeader == -1) {// if winner is -1 ... its a simple election response, still in election
-                    System.out.println("In Election, receiving election response from the lower id broker " + senderId);
-                    // me can stop election Bc there's someone more qualified than me to be the leader
-                    System.out.println("now waiting for election decision from other broker");
-                    electionStatus = true;
-
-                }
-                else { // if winner is not -1 ... we have a winner
-                    System.out.println("new leader id:" + newLeader);
-                   // int oldLeader = membershipTable.getLeaderID();
-                    int oldLeader = currentLeaderBeforeMarkDead;
-                    System.out.println("old leader id:" + oldLeader);
-                    if (oldLeader != -1) { // there's a leader
-                        membershipTable.switchLeaderShip(oldLeader, newLeader);//update new leader
-                    } else {
-                        System.out.println("weird ... no current leader right now");
+        while(listening) {
+            Resp.Response f;
+            Runnable add = () -> {
+                try {
+                    byte[] result = conn.receive();
+                    if (result != null) {
+                        bq.put(Resp.Response.parseFrom(result));
                     }
-
-                    try {
-                        Thread.sleep(3000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    electionStatus = false; // election ended on my end
-                    System.out.println("election ended");
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            }
+            };
 
-        } else { // if no response within timeout
-            FailureDetector failureDetector = new FailureDetector(membershipTable, peerID, inElection, conn, brokerID, connMap);
-            failureDetector.run();
-           // electionStatus = failureDetector.getElectionStatus();
-          //  setInElection(electionStatus);
-            electionStatus = failureDetector.getElectionStatus();
-           // System.out.println("election after FD: " + electionStatus);
-            System.out.println("election after FD: " + electionStatus);
-            currentLeaderBeforeMarkDead = failureDetector.getCurrentLeaderBeforeMarkDead();
-            //stop the connection since the peer is dead
-            sending = false;
+            executor.execute(add);
+            int replyingBrokerId = -1;
+
+            f = bq.poll(delay * retires);
+
+            // if there's response within timeout
+            if (f != null) {
+                //check if f is heartbeat or election message
+                System.out.println("type in listener: " + f.getType());
+                if (f.getType().equals("heartbeat")) {
+                    // inElection = false;
+                } else if (f.getType().equals("election")) {
+                    inElection = true;
+                } else {
+                    System.out.println("wrong type");
+                }
+
+                if (!inElection) {// if its heartbeat response
+                    //  heartBeat = f.getHeartBeat();
+                    replyingBrokerId = f.getSenderID();
+                    System.out.println("receiving heartbeat msg from peer: " + replyingBrokerId);
+//                    Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
+//                    conn.send(heartBeatMessage.toByteArray());
+
+                } else {// if its election response
+                    int senderId = f.getSenderID();
+                    int newLeader = f.getWinnerID();
+
+                    if (newLeader == -1) {// if winner is -1 ... its a simple election response, still in election
+                        System.out.println("In Election, receiving election response from the lower id broker " + senderId);
+                        // me can stop election Bc there's someone more qualified than me to be the leader
+                        System.out.println("now waiting for election decision from other broker");
+                        electionStatus = true;
+
+                    } else { // if winner is not -1 ... we have a winner
+                        System.out.println("new leader id:" + newLeader);
+                        // int oldLeader = membershipTable.getLeaderID();
+                        int oldLeader = currentLeaderBeforeMarkDead;
+                        System.out.println("old leader id:" + oldLeader);
+                        if (oldLeader != -1) { // there's a leader
+                            membershipTable.switchLeaderShip(oldLeader, newLeader);//update new leader
+                        } else {
+                            System.out.println("weird ... no current leader right now");
+                        }
+
+                        try {
+                            Thread.sleep(3000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        electionStatus = false; // election ended on my end
+                        System.out.println("election ended");
+                    }
+                }
+
+            } else { // if no response within timeout
+                FailureDetector failureDetector = new FailureDetector(membershipTable, peerID, inElection, conn, brokerID, connMap);
+                failureDetector.run();
+                // electionStatus = failureDetector.getElectionStatus();
+                //  setInElection(electionStatus);
+                inElection = failureDetector.getElectionStatus();
+                // System.out.println("election after FD: " + electionStatus);
+                System.out.println("election after FD: " + inElection);
+                currentLeaderBeforeMarkDead = failureDetector.getCurrentLeaderBeforeMarkDead();
+                //stop the connection since the peer is dead
+                sending = false;
+            }
         }
 
         // else if within num of retires, send same heart beat again, go back to while loop
