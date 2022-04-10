@@ -19,12 +19,9 @@ public class MembershipTable {
     public void put(int id, MemberInfo memberInfo){
         if(membershipTable.size() != 0) {
             int newId = createHighestId();
-//            System.out.println("new Id: " + newId);
             membershipTable.put(newId, memberInfo);
         }else{
             membershipTable.put(id, memberInfo);
-//            System.out.println("leader new Id: " + id);
-
         }
 
     }

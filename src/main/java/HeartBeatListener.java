@@ -20,7 +20,6 @@ public class HeartBeatListener implements Runnable {
     int brokerID;
     private HashMap<Integer, Connection> connMap;
     int currentLeaderBeforeMarkDead;
-    volatile boolean electionStatus;
     boolean listening = true;
 
 
@@ -36,16 +35,6 @@ public class HeartBeatListener implements Runnable {
         this.connMap = connMap;
         this.inElection = inElection;
     }
-
-    public boolean getSending() {
-        return this.sending;
-    }
-
-    public boolean getElectionStatus() {
-        return inElection;
-    }
-
-
 
     //after sending out heartbeat msg -> expecting heartbeat response
     //if no hb response from leader, enter election and send initial election msg, wait for election response or decision
@@ -84,7 +73,6 @@ public class HeartBeatListener implements Runnable {
                 }
 
                 if (!inElection) {// if its heartbeat response
-                    //  heartBeat = f.getHeartBeat();
                     replyingBrokerId = f.getSenderID();
                     System.out.println("receiving heartbeat msg from peer: " + replyingBrokerId);
                     membershipTable.getMemberInfo(replyingBrokerId).setAlive(true);
@@ -92,7 +80,7 @@ public class HeartBeatListener implements Runnable {
                     Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
                     conn.send(heartBeatMessage.toByteArray());
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(500);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -119,40 +107,22 @@ public class HeartBeatListener implements Runnable {
                         } else {
                             System.out.println("weird ... no current leader right now");
                         }
-
-//                        try {
-//                            Thread.sleep(3000);
-//                        } catch (InterruptedException e) {
-//                            e.printStackTrace();
-//                        }
                         inElection = false; // election ended on my end
                         System.out.println("election ended");
                         Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
                         conn.send(heartBeatMessage.toByteArray());
-//                        try {
-//                            Thread.sleep(1000);
-//                        } catch (InterruptedException e) {
-//                            e.printStackTrace();
-//                        }
                     }
                 }
 
             } else { // if no response within timeout
-                //sending = false;
                 System.out.println("before FD: ELECTION " + inElection);
                 FailureDetector failureDetector = new FailureDetector(membershipTable, peerID, inElection, conn, brokerID, connMap, listening);
                 failureDetector.run();
-                // electionStatus = failureDetector.getElectionStatus();
-                //  setInElection(electionStatus);
                 inElection = failureDetector.getElectionStatus();
-                // System.out.println("election after FD: " + electionStatus);
                 System.out.println("election after FD: " + inElection);
                 currentLeaderBeforeMarkDead = failureDetector.getCurrentLeaderBeforeMarkDead();
-                //stop the connection since the peer is dead
-
             }
         }
-
 
         // else if within num of retires, send same heart beat again, go back to while loop
 

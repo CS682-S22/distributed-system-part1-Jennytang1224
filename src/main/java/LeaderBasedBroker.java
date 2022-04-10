@@ -77,7 +77,7 @@ public class LeaderBasedBroker {
         serverListener.start();
 
         try {
-            Thread.sleep(5000);
+            Thread.sleep(8000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -85,10 +85,6 @@ public class LeaderBasedBroker {
         // connection to all brokers and send peer info
         Thread connector = new Thread(new Connector(this.hostName, this.port));
         connector.start();
-
-//
-//        Connector c = new Connector(this.hostName, this.port);
-//        c.run();
 
     }
 
@@ -321,7 +317,7 @@ public class LeaderBasedBroker {
                 System.out.println("sent peer info to broker " + peerID + "...\n");
 
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -337,23 +333,6 @@ public class LeaderBasedBroker {
 
                 brokerCounter++;  // next broker in the map
             }
-//            // send heartbeat to others
-//            for(int id: membershipTable.getKeys()) {
-//                isAlive = membershipTable.getMemberInfo(id).isAlive;
-//                if (isAlive) {
-//                    System.out.println("Now sending heartbeat to " + peerID + "...\n");
-//                    HeartBeatSender sender = new HeartBeatSender(this.hostName,
-//                            String.valueOf(this.port), connection, peerHostName, peerPort,
-//                            connMap, membershipTable, inElection);
-//                    Thread heartbeatSender = new Thread(sender);
-//                    heartbeatSender.start();
-//
-//                }
-//            }
-
-
-
         }
-
     }
 }

@@ -39,22 +39,16 @@ public class FailureDetector {
     public void run() {
         currentLeader = membershipTable.getLeaderID();
         if(!inElection){ //if expecting heartbeat, but nothing
-        //    if(peerID != brokerID && membershipTable.getMemberInfo(peerID).isAlive) {
-                System.out.println("exceed timeout, assume peer: " + peerID + " is dead ");
-         //   }
+            System.out.println("exceed timeout, assume peer: " + peerID + " is dead ");
+
             if (membershipTable.getMemberInfo(peerID).isLeader) { // leader is dead
                 //if peerid is leader, bully (send initial election msg and wait for election response)
-
                 membershipTable.markDead(peerID);
-
-               // membershipTable.cancelLeadership(peerID);
-
                 BullyElection bully = new BullyElection(brokerID, membershipTable, connMap, conn);
                 bully.run();
                 peerCounterForElection = bully.getPeerCounter();
                 System.out.println("~~~ # of peers that me (broker " + brokerID + ") send election msg to: " + peerCounterForElection);
                 inElection = true;
-               // sending = false;
                // membershipTable.switchLeaderShip(peerID, peerID + 1); // naively choosing next smallest id, change later
             } else { // if peerid is follower, update table  - mark dead
                 membershipTable.markDead(peerID);
@@ -80,7 +74,6 @@ public class FailureDetector {
                     System.out.println("im out..waiting for leader announcement from other broker..");
                     isThereLowerIDBroker = true;
                     inElection = true;
-//                    sending = false;
                     break;
                 }
             }
@@ -88,14 +81,6 @@ public class FailureDetector {
             if(!isThereLowerIDBroker) { // if no such broker exists, im the new leader!
                 announceNewLeadership();
                 inElection = false;
-//                sending = true;
-//                Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
-//                conn.send(heartBeatMessage.toByteArray());
-//                try {
-//                    Thread.sleep(1000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
 
             }
         }

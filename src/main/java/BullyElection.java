@@ -51,27 +51,7 @@ public class BullyElection {
                 conn.send(electionMessage.toByteArray()); // send election message
                 peerCounter++;
                 System.out.println(peerID);
-                //if no any response, meaning this broker is the lowest-id living broker,
-                // claim leadership notify others
-//                if (!isThereHigherIDBroker) {
-//                    winnerId = brokerId;
-//                    for (int brokerID : connMap.keySet()) {
-//                        if ((membershipTable.getMemberInfo(brokerID).isAlive)) { // only notify all living brokers
-//                            //get connection between this broker and the
-//                            Connection conn = connMap.get(brokerID);
-//                            Response.OneResponse electionMessage = Response.OneResponse.newBuilder()
-//                                    .setElection(Response.Election.newBuilder()
-//                                            .setSenderID(brokerId)
-//                                            .setWinnerID(winnerId).build()).build();
-//                            conn.send(electionMessage.toByteArray()); // send election message notify i am the winner
-//                        }
-//                    }
-//                }
             }
-
         }
-     //   System.out.println("~~~ in BULLY # of peers that me (broker " + brokerId + ") send election msg to " + peerCounter);
-
-
     }
 }
