@@ -7,12 +7,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
-public class HeartBeatListener implements Runnable{
+public class HeartBeatListener implements Runnable {
     Connection conn;
     MembershipTable membershipTable;
     private CS601BlockingQueue<Resp.Response> bq;
     private ExecutorService executor;
-    int delay = 500;
+    int delay = 1000;
     int retires = 3;
     int peerID;
     volatile boolean sending;
@@ -24,40 +24,35 @@ public class HeartBeatListener implements Runnable{
     boolean listening = true;
 
 
-
     public HeartBeatListener(Connection conn, MembershipTable membershipTable, int peerID, boolean sending,
-                             int brokerID, HashMap<Integer, Connection> connMap, boolean inElection){
-       this.conn = conn;
-       this.membershipTable = membershipTable;
-       this.peerID = peerID;
-       this.sending = sending;
-       this.executor = Executors.newSingleThreadExecutor();
-       this.bq = new CS601BlockingQueue<>(1);
-       this.brokerID = brokerID;
-       this.connMap = connMap;
-       this.inElection = inElection;
+                             int brokerID, HashMap<Integer, Connection> connMap, boolean inElection) {
+        this.conn = conn;
+        this.membershipTable = membershipTable;
+        this.peerID = peerID;
+        this.sending = sending;
+        this.executor = Executors.newSingleThreadExecutor();
+        this.bq = new CS601BlockingQueue<>(1);
+        this.brokerID = brokerID;
+        this.connMap = connMap;
+        this.inElection = inElection;
     }
 
-    public boolean getSending(){
+    public boolean getSending() {
         return this.sending;
     }
 
-    public boolean getElectionStatus(){
+    public boolean getElectionStatus() {
         return inElection;
     }
 
 
-    public void setInElection(boolean inElection) {
-        this.inElection = inElection;
-    }
 
     //after sending out heartbeat msg -> expecting heartbeat response
     //if no hb response from leader, enter election and send initial election msg, wait for election response or decision
     @Override
     public void run() {
-        while(listening) {
-            Resp.Response f;
-            Runnable add = () -> {
+        Runnable add = () -> {
+            while(listening) {
                 try {
                     byte[] result = conn.receive();
                     if (result != null) {
@@ -66,19 +61,22 @@ public class HeartBeatListener implements Runnable{
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            };
+            }
+        };
 
-            executor.execute(add);
+        executor.execute(add);
+        while(listening) {
+            Resp.Response f;
             int replyingBrokerId = -1;
-
             f = bq.poll(delay * retires);
+            System.out.println("inElection?????" + inElection);
 
             // if there's response within timeout
             if (f != null) {
                 //check if f is heartbeat or election message
                 System.out.println("type in listener: " + f.getType());
                 if (f.getType().equals("heartbeat")) {
-                    // inElection = false;
+                    inElection = false;
                 } else if (f.getType().equals("election")) {
                     inElection = true;
                 } else {
@@ -89,10 +87,18 @@ public class HeartBeatListener implements Runnable{
                     //  heartBeat = f.getHeartBeat();
                     replyingBrokerId = f.getSenderID();
                     System.out.println("receiving heartbeat msg from peer: " + replyingBrokerId);
-//                    Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
-//                    conn.send(heartBeatMessage.toByteArray());
+                    membershipTable.getMemberInfo(replyingBrokerId).setAlive(true);
 
-                } else {// if its election response
+                    Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
+                    conn.send(heartBeatMessage.toByteArray());
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+                else if(inElection){// if its election response
                     int senderId = f.getSenderID();
                     int newLeader = f.getWinnerID();
 
@@ -100,7 +106,8 @@ public class HeartBeatListener implements Runnable{
                         System.out.println("In Election, receiving election response from the lower id broker " + senderId);
                         // me can stop election Bc there's someone more qualified than me to be the leader
                         System.out.println("now waiting for election decision from other broker");
-                        electionStatus = true;
+                        inElection = true;
+                        sending = false;
 
                     } else { // if winner is not -1 ... we have a winner
                         System.out.println("new leader id:" + newLeader);
@@ -113,18 +120,27 @@ public class HeartBeatListener implements Runnable{
                             System.out.println("weird ... no current leader right now");
                         }
 
-                        try {
-                            Thread.sleep(3000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        electionStatus = false; // election ended on my end
+//                        try {
+//                            Thread.sleep(3000);
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+                        inElection = false; // election ended on my end
                         System.out.println("election ended");
+                        Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
+                        conn.send(heartBeatMessage.toByteArray());
+//                        try {
+//                            Thread.sleep(1000);
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
                     }
                 }
 
             } else { // if no response within timeout
-                FailureDetector failureDetector = new FailureDetector(membershipTable, peerID, inElection, conn, brokerID, connMap);
+                //sending = false;
+                System.out.println("before FD: ELECTION " + inElection);
+                FailureDetector failureDetector = new FailureDetector(membershipTable, peerID, inElection, conn, brokerID, connMap, listening);
                 failureDetector.run();
                 // electionStatus = failureDetector.getElectionStatus();
                 //  setInElection(electionStatus);
@@ -133,9 +149,10 @@ public class HeartBeatListener implements Runnable{
                 System.out.println("election after FD: " + inElection);
                 currentLeaderBeforeMarkDead = failureDetector.getCurrentLeaderBeforeMarkDead();
                 //stop the connection since the peer is dead
-                sending = false;
+
             }
         }
+
 
         // else if within num of retires, send same heart beat again, go back to while loop
 

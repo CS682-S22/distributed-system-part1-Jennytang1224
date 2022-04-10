@@ -77,7 +77,7 @@ public class LeaderBasedBroker {
         serverListener.start();
 
         try {
-            Thread.sleep(1000);
+            Thread.sleep(5000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -174,7 +174,7 @@ public class LeaderBasedBroker {
 //                                            e.printStackTrace();
 //                                        }
 //                                    }
-                                   // inElection = false;
+                                    inElection = false;
                                 } else if (f.getType().equals("election")) {
                                     inElection = true;
                                 } else {
@@ -189,25 +189,45 @@ public class LeaderBasedBroker {
                                     Resp.Response heartBeatResponse = Resp.Response.newBuilder()
                                             .setType("heartbeat").setSenderID(brokerID).build();
                                     conn.send(heartBeatResponse.toByteArray());
+                                    try {
+                                        Thread.sleep(2000);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                    membershipTable.getMemberInfo(senderId).setAlive(true);
+
                                 }
 
 
-                                else{ // if election msg
+                                else if(inElection && !f.getType().equals("heartbeat")){ // if election msg
                                     int senderId = f.getSenderID();
                                     int newLeader = f.getWinnerID();
                                     System.out.println(" -> > > receiving election msg from peer " + senderId);
-
                                     if (newLeader != -1) {//if other inform me new leader, me updated table
                                         System.out.println("new leader id:" + newLeader);
                                         int oldLeader = membershipTable.getLeaderID();
                                         System.out.println("old leader id:" + oldLeader);
                                         if (oldLeader != -1) { // there's a leader
+                                            System.out.println("in my table updated the new leader to " + newLeader );
                                             membershipTable.switchLeaderShip(oldLeader, newLeader);//update new leader
                                         } else {
                                             System.out.println("weird ... no current leader right now");
                                         }
                                     //    inElection = false; // election ended on my end
-                                        System.out.println("election ended on broker " + brokerID + " side!");
+                                        membershipTable.getMemberInfo(senderId).setAlive(true);
+                                        membershipTable.print();
+                                        System.out.println("!!!!!!!!! election ended on broker " + brokerID + " side!");
+                                        inElection = false;
+
+
+                                        Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
+                                        conn.send(heartBeatMessage.toByteArray());
+//                                        try {
+//                                            Thread.sleep(1000);
+//                                        } catch (InterruptedException e) {
+//                                            e.printStackTrace();
+//                                        }
+
                                     }
                                     else { //other sends election msg to me, me needs reply to other broker
                                         Resp.Response electionResponse = Resp.Response.newBuilder().setType("election")
@@ -215,13 +235,6 @@ public class LeaderBasedBroker {
                                         conn.send(electionResponse.toByteArray());
                                         inElection = true;
                                         System.out.println(" -> > >broker " + brokerID + " reply to broker " + senderId  + " election msg...");
-
-
-//                                        //start listening for response
-//                                        boolean sending = true;
-//                                        HeartBeatListener heartBeatlistener = new HeartBeatListener(conn, membershipTable, peerID, sending, brokerID, connMap);
-//                                        heartBeatlistener.run();
-
                                     }
                                 }
                             }
