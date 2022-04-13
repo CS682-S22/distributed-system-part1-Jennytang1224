@@ -19,9 +19,9 @@ public class LeaderBasedReceiveProducerMessage implements Runnable{
 //    private HashMap<Integer, Connection> connMap;
     private HashMap<String, Integer> counterMap;
     private static HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
-    private Connection connection;
+    private Connection connWithLeadBroker;
 
-    public LeaderBasedReceiveProducerMessage( byte[] recordBytes, int messageCounter, HashMap<String, Integer> counterMap, Connection connection) {
+    public LeaderBasedReceiveProducerMessage( byte[] recordBytes, int messageCounter, HashMap<String, Integer> counterMap, Connection connWithLeadBroker) {
         this.recordBytes = recordBytes;
         this.messageCounter = messageCounter;
 //        this.offsetInMem = offsetInMem;
@@ -30,7 +30,7 @@ public class LeaderBasedReceiveProducerMessage implements Runnable{
 
         this.counterMap = counterMap;
         topicMap = new HashMap<>();
-        this.connection = connection;
+        this.connWithLeadBroker = connWithLeadBroker;
 
     }
 
@@ -80,7 +80,7 @@ public class LeaderBasedReceiveProducerMessage implements Runnable{
                 .build();
 
         // send to broker
-        connection.send(record.toByteArray());
+        connWithLeadBroker.send(record.toByteArray());
      //   System.out.println("Message has been sent to the assigned BROKER: " + brokerID + ", PARTITION: " + partitionID);
 
 //        // save intermediate data msg id, offset of bytes

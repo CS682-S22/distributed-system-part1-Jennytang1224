@@ -38,7 +38,8 @@ public class BullyElection {
             e.printStackTrace();
         }
         for (int peerID : connMap.keySet()) {
-           if ((membershipTable.getMemberInfo(peerID).isAlive) && (peerID < brokerId)) {
+            System.out.println("ID!!! " + peerID);
+           if ((membershipTable.membershipTable.containsKey(peerID)) && (membershipTable.getMemberInfo(peerID).isAlive) && (peerID < brokerId)) {
                 //get connection between this broker and the other broker
           //  if ((membershipTable.getMemberInfo(peerID).isAlive)
                 Connection conn = connMap.get(peerID);

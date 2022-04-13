@@ -1,19 +1,19 @@
 
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import dsd.pubsub.protos.HeartBeatMessage;
-import dsd.pubsub.protos.PeerInfo;
-import dsd.pubsub.protos.Resp;
-import dsd.pubsub.protos.Response;
+import dsd.pubsub.protos.*;
 
 import javax.sound.sampled.LineListener;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,6 +42,7 @@ public class LeaderBasedBroker {
     static HashMap<Integer, Connection> connMap = new HashMap<>();
     private static MembershipTable membershipTable = new MembershipTable();
     static volatile boolean inElection = false;
+    static int currentLeader = 1;
 
 
     public LeaderBasedBroker(String hostName, int port) {
@@ -131,13 +132,25 @@ public class LeaderBasedBroker {
                         peerPort = p.getPortNumber();
                         peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
 
-                        if (type.equals("producer")) { // only bc this broker is a leader
-                            // get the messageInfo though socket
-                            System.out.println("this Broker now has connected to PRODUCER: " + peerHostName + " port: " + peerPort + "\n");
-                            counter++;
-                        } else if (type.equals("broker")) {
+
+                        if (type.equals("broker")) { // other brokers
                             System.out.println("this broker NOW has connected to BROKER: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
+                        }
+                        else { // hear from producer/LB only bc this broker is a leader
+                            // get the messageInfo though socket
+                            type = "producer";
+                            System.out.println("this Broker now has connected to PRODUCER: " + peerHostName + " port: " + peerPort + "\n");
+                            Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, buffer, topicMap, messageCounter, offsetInMem));
+                            th.start();
+                            try {
+                                th.join();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            counter++;
+
+                            //replicate data to other broker: send data to other followers
                         }
 
                     } else { // when receiving producer data
@@ -152,6 +165,9 @@ public class LeaderBasedBroker {
                             counter++;
                             messageCounter++;
 
+                            //replicate data to other broker: send data to other followers
+
+
                         } else if (type.equals("broker")) {
                             // other send me heartbeat msg(me reply) / election(other inform new leader, me update table)/ election(other send election msg to me, needs reply to other broker )
                             Resp.Response f = null;
@@ -163,13 +179,6 @@ public class LeaderBasedBroker {
                             if(f != null) {
                                 System.out.println("type in broker: " + f.getType());
                                 if (f.getType().equals("heartbeat")) {
-//                                    if(inElection){
-//                                        try {
-//                                            Thread.sleep(4000);
-//                                        } catch (InterruptedException e) {
-//                                            e.printStackTrace();
-//                                        }
-//                                    }
                                     inElection = false;
                                 } else if (f.getType().equals("election")) {
                                     inElection = true;
@@ -177,7 +186,6 @@ public class LeaderBasedBroker {
                                     System.out.println("wrong type");
                                 }
 
-                                System.out.println("election in receiver:" + inElection);
                                 if (!inElection) { // if its heartbeat, me reply
                                     int senderId = f.getSenderID();
                                     System.out.println("broker " + brokerID + " receiving heartbeat from broker " + senderId + "...");
@@ -201,20 +209,52 @@ public class LeaderBasedBroker {
                                     System.out.println(" -> > > receiving election msg from peer " + senderId);
                                     if (newLeader != -1) {//if other inform me new leader, me updated table
                                         System.out.println("new leader id:" + newLeader);
+
                                         int oldLeader = membershipTable.getLeaderID();
-                                        System.out.println("old leader id:" + oldLeader);
                                         if (oldLeader != -1) { // there's a leader
                                             System.out.println("in my table updated the new leader to " + newLeader );
                                             membershipTable.switchLeaderShip(oldLeader, newLeader);//update new leader
                                         } else {
                                             System.out.println("weird ... no current leader right now");
                                         }
-                                    //    inElection = false; // election ended on my end
+
+                                        //    inElection = false; // election ended on my end
                                         membershipTable.getMemberInfo(senderId).setAlive(true);
                                         membershipTable.print();
+
+                                        //if this broker is leader, send table to load balancer
+                                        if(membershipTable.getMemberInfo(brokerID).isLeader){
+                                            //get new leader hostname and port
+                                            String peerHostName = Utilities.getHostnameByID(newLeader);
+                                            int peerPort = Utilities.getPortByID(newLeader);
+                                            //get LB hostname and port
+                                            String LBHostName = Utilities.getHostnameByID(0);
+                                            int LBPort = Utilities.getPortByID(0);
+                                            Connection connLB = new Connection(LBHostName, LBPort, true); // make connection to peers in config
+                                            Utilities.leaderConnectToLB(LBHostName, LBPort, peerHostName, peerPort, connLB);
+
+                                            try { // every 3 sec request new data
+                                                Thread.sleep(1000);
+                                            } catch (InterruptedException e) {
+                                                e.printStackTrace();
+                                            }
+
+                                            // set new leadership
+                                            Utilities.sendMembershipTableUpdates(connLB, "updateLeader", brokerID, newLeader,
+                                                    "", 0, "", true, true);
+                                            //cancel old leader's leadership
+
+                                            Utilities.sendMembershipTableUpdates(connLB, "updateLeader", brokerID, currentLeader,
+                                                    "", 0, "", false, false);
+                                            //send table to LB
+                                            Utilities.sendMembershipTableUpdates(connLB, "updateAlive", brokerID, senderId,
+                                                    "", 0, "", membershipTable.getMemberInfo(senderId).isLeader, true);
+
+                                        }
+                                        currentLeader = newLeader;
+
                                         System.out.println("!!!!!!!!! election ended on broker " + brokerID + " side!");
                                         inElection = false;
-
 
                                         Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
                                         conn.send(heartBeatMessage.toByteArray());
@@ -251,7 +291,7 @@ public class LeaderBasedBroker {
      * inner class Connector for all brokers
      */
     static class Connector implements Runnable {
-        int brokerCounter = 1;
+        int brokerCounter = 0; // 0 is LB
         private String brokerConfigFile = "files/brokerConfig.json";
         Connection connection;
         String hostName;
@@ -259,6 +299,9 @@ public class LeaderBasedBroker {
         int brokerID;
         int peerID;
         boolean isAlive = true;
+        boolean isLeader = false;
+        boolean isLB = false;
+        int currentLeader;
 
 
         public Connector(String hostName, int port) {
@@ -272,67 +315,165 @@ public class LeaderBasedBroker {
         public void run() {
             // create connections to all other lower brokers than itself
             while (brokerCounter <= numOfBrokers) { // need to generalize
-                List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
-                IPMap ipMap = (IPMap) maps.get(0);
-                PortMap portMap = (PortMap) maps.get(1);
-                String peerHostName = ipMap.getIpById(String.valueOf(brokerCounter));
-                int peerPort = Integer.parseInt(portMap.getPortById(String.valueOf(brokerCounter)));
+//                List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
+//                IPMap ipMap = (IPMap) maps.get(0);
+//                PortMap portMap = (PortMap) maps.get(1);
+//                String peerHostName = ipMap.getIpById(String.valueOf(brokerCounter));
+//                int peerPort = Integer.parseInt(portMap.getPortById(String.valueOf(brokerCounter)));
+
+                String peerHostName = Utilities.getHostnameByID(brokerCounter);
+                int peerPort = Utilities.getPortByID(brokerCounter);
                 peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
 
-                connection = new Connection(peerHostName, peerPort, isAlive); // connection to other peer
 
-                //add this broker to membership table
-                isAlive = connection.getAlive();
-                boolean isLeader = false;
-                if (peerID == 1) {//leader
-                    isLeader = true;
+                if(brokerID == 1) {
+                    currentLeader = 1;
                 }
+
+                if(peerID == 0){
+                    isLB = true;
+                }else{
+                    isLB = false;
+                }
+
+                if (peerID == 1) {// set leader for table
+                    isLeader = true;
+                }else{
+                    isLeader = false;
+                }
+                isAlive = true;
+                connection = new Connection(peerHostName, peerPort, isAlive); // make connection to peers in config
+                connMap.put(brokerCounter, connection); // add connection to map, {5:conn5, 4:conn4, 3:conn3}
+
+                isAlive = connection.getAlive();
                 if (connection == null) {
                     System.out.println("(This broker is NOT in use)");
                     return;
                 }
-                MemberInfo memberInfo = new MemberInfo(peerHostName, peerPort, "", isLeader, isAlive);
 
-                if (membershipTable.size() != 0) {
-                    membershipTable.put(peerID, memberInfo);
-                } else {
-                    membershipTable.put(peerID, memberInfo);
+
+                //if im leader, send peer info to LB (after connect to LB )
+            //    if(membershipTable.membershipTable.containsKey(brokerID) && membershipTable.getMemberInfo(brokerID).isLeader && isLB) {
+             if(currentLeader == 1 && isLB){
+                  //  Connection connLB = connMap.get(0); //connection with LB
+                    // send peer info to LB
+//                    System.out.println("Connected to LB : " + peerHostName + ":" + peerPort);
+//                    String type = "broker";
+//                    PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
+//                            .setType(type)
+//                            .setHostName(hostName)
+//                            .setPortNumber(port)
+//                            .build();
+//                    connection.send(peerInfo.toByteArray());
+                 System.out.println("Connected to LB : " + peerHostName + ":" + peerPort);
+
+                 Utilities.leaderConnectToLB(peerHostName, peerPort, hostName, port, connection);
+                 System.out.println("Lead broker sent peer info to Load Balancer ... \n");
+             }
+
+
+                if(brokerCounter > 0) { // brokers
+                    System.out.println("Connected to broker : " + peerHostName + ":" + peerPort);
+
+//                    //add this broker to membership table
+//                    isAlive = connection.getAlive();
+//                    boolean isLeader = false;
+
+
+                    MemberInfo memberInfo = new MemberInfo(peerHostName, peerPort, "", isLeader, isAlive);
+
+                    if (membershipTable.size() != 0) {
+                        membershipTable.put(peerID, memberInfo);
+                    } else {
+                        membershipTable.put(peerID, memberInfo);
+                    }
+                    System.out.println("~~~~~~~~~~~~~~~~ after broker " + peerID + " connected..");
+                    membershipTable.print();
+                    System.out.println(" ");
+
+                    // if im a leader, send membership updates to LB
+                    if(membershipTable.membershipTable.containsKey(brokerID) && membershipTable.getMemberInfo(brokerID).isLeader) {
+                        Utilities.sendMembershipTableUpdates(connMap.get(0), "new", brokerID, peerID,
+                                peerHostName, peerPort, "", isLeader, isAlive);
+                        membershipTable.print();
+                    }
+
+
+                    // send peer info to other brokers
+                    String type = "broker";
+                    PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
+                            .setType(type)
+                            .setHostName(hostName)
+                            .setPortNumber(port)
+                            .build();
+
+                    connection.send(peerInfo.toByteArray());
+                    System.out.println("sent peer info to broker " + peerID + "...\n");
+
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    //sending heartbeat to brokers
+                    if (isAlive) {
+                        System.out.println("Now sending heartbeat to " + peerID + "...\n");
+                        HeartBeatSender sender = new HeartBeatSender(this.hostName,
+                                String.valueOf(this.port), connection, peerHostName, peerPort,
+                                connMap, membershipTable, inElection);
+                        Thread heartbeatSender = new Thread(sender);
+                        heartbeatSender.start();
+                    }
                 }
-                System.out.println("~~~~~~~~~~~~~~~~ after broker " + peerID + " connected..");
-                membershipTable.print();
-                System.out.println(" ");
+            /*    else{
+                    System.out.println("Connected to LB : " + peerHostName + ":" + peerPort);
+                }*/
 
-                connMap.put(brokerCounter, connection); // add connection to map, {5:conn5, 4:conn4, 3:conn3}
-                System.out.println("Connected to broker: " + peerHostName + ":" + peerPort);
+                brokerCounter++;  // next broker in the map
+                currentLeader = membershipTable.getLeaderID();
+            }
 
-                // send peer info to other brokers
+
+
+
+/*
+            //if this broker is leader, send table to load balancer
+            if(membershipTable.getMemberInfo(brokerID).isLeader){
+                //make connection with LB
+                System.out.println("connmap: " + connMap);
+                Connection connLB = connMap.get(0);
+
+                // send peer info to LB
                 String type = "broker";
                 PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
                         .setType(type)
                         .setHostName(hostName)
                         .setPortNumber(port)
                         .build();
+                connLB.send(peerInfo.toByteArray());
+                System.out.println("Lead broker sent peer info to Load Balancer ... \n");
 
-                connection.send(peerInfo.toByteArray());
-                System.out.println("sent peer info to broker " + peerID + "...\n");
+                //send table to LB
+               // Utilities.sendMembershipTable(connLB, membershipTable);
+               // String tableString = Utilities.convertMapToString(membershipTable.membershipTable);
+              //  System.out.println("string:" + tableString);
 
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                if (isAlive) {
-                    System.out.println("Now sending heartbeat to " + peerID + "...\n");
-                    HeartBeatSender sender = new HeartBeatSender(this.hostName,
-                            String.valueOf(this.port), connection, peerHostName, peerPort,
-                            connMap, membershipTable, inElection);
-                    Thread heartbeatSender = new Thread(sender);
-                    heartbeatSender.start();
-
-                }
-
-                brokerCounter++;  // next broker in the map
+                BrokerToLoadBalancer.lb table = BrokerToLoadBalancer.lb.newBuilder()
+                        .setType("new")
+                        .setSenderID(brokerID)
+                        .setBrokerID(peerID)
+                        .setHostName(peerHostName)
+                        .setPort(peerPort)
+                        .setToken("")
+                        .setIsLeader()
+                        .build();
+                connLB.send(table.toByteArray());
+                System.out.println("Lead broker sent table to Load Balancer ... \n");
             }
+            */
+
+
         }
     }
 }

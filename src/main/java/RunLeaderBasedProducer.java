@@ -9,30 +9,16 @@ import java.util.regex.Pattern;
 
 public class RunLeaderBasedProducer {
     public static void main(String[] args){
-        //usage: brokerLocation filepath
-        //check argument length
-        if(args.length == 0){
-            System.out.println("enter topic and message");
-            return;
+        //usage: LBlocation filepath
+        if(!Utilities.validateArgsProducer(args)){
+            System.exit(-1);
         }
-        else if (args.length < 2){
-            System.out.println("missing another argument");
-            return;
-        }
-        else if (args.length > 2){
-            System.out.println("invalid number of arguments");
-            return;
-        }
+//        String brokerLocation = args[0];
+//        String filepath = args[1]
+        String LBLocation = "Jennys-MacBook-Pro.local:1430";
+        String filepath = "files/100_records.log";
 
-        String brokerLocation = args[0];
-        String filepath = args[1];
-
-//        String brokerLocation = "Jennys-MacBook-Pro.local:1431";
-//        String filepath = "files/access_test.log";
-
-        // Open a connection to the Broker by creating a new Producer object
-        // send producer identity to broker
-        LeaderBasedProducer leaderBasedProducer = new LeaderBasedProducer(brokerLocation);
+        LeaderBasedProducer leaderBasedProducer = new LeaderBasedProducer(LBLocation);
 
         // for each data record, send topic, key and data
         ByteString data = null;
@@ -59,7 +45,7 @@ public class RunLeaderBasedProducer {
                     if (key.length() < 10) { // sanity check
                         // build protobuffer
                         offset = data.size();
-                        System.out.println("set offset: " + offset);
+                        //System.out.println("set offset: " + offset);
                         // offset += 1; // monotonically increasing
                         MessageInfo.Message record = MessageInfo.Message.newBuilder()
                                 .setTopic(topic)

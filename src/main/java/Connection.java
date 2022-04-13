@@ -27,6 +27,8 @@ public class Connection {
             if(socket == null){
                 this.alive = false;
                 System.out.println("(This broker is NOT in use)");
+            }else{
+                this.alive = true;
             }
 
         }

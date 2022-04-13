@@ -58,7 +58,6 @@ public class HeartBeatListener implements Runnable {
             Resp.Response f;
             int replyingBrokerId = -1;
             f = bq.poll(delay * retires);
-            System.out.println("inElection?????" + inElection);
 
             // if there's response within timeout
             if (f != null) {
@@ -107,19 +106,39 @@ public class HeartBeatListener implements Runnable {
                         } else {
                             System.out.println("weird ... no current leader right now");
                         }
+
+                 /*       //if this broker is leader, send table to load balancer
+                        if(membershipTable.getMemberInfo(brokerID).isLeader){
+                            //get new leader hostname and port
+                            String peerHostName = Utilities.getHostnameByID(newLeader);
+                            int peerPort = Utilities.getPortByID(newLeader);
+                            //get LB hostname and port
+                            String LBHostName = Utilities.getHostnameByID(0);
+                            int LBPort = Utilities.getPortByID(0);
+                            Connection connLB = new Connection(LBHostName, LBPort, true); // make connection to peers in config
+                            Utilities.leaderConnectToLB(LBHostName, LBPort, peerHostName, peerPort, connLB);
+
+                            //cancel old leader's leadership
+                            Utilities.sendMembershipTableUpdates(connMap.get(0), "updateLeader", brokerID, oldLeader,
+                                    "", 0, "", false, membershipTable.getMemberInfo(oldLeader).isAlive);
+                            // set new leadership
+                            Utilities.sendMembershipTableUpdates(connMap.get(0), "updateLeader", brokerID, newLeader,
+                                    "", 0, "", true, membershipTable.getMemberInfo(newLeader).isAlive);
+                            membershipTable.print();
+                        }
+*/
                         inElection = false; // election ended on my end
                         System.out.println("election ended");
                         Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
                         conn.send(heartBeatMessage.toByteArray());
+
                     }
                 }
 
             } else { // if no response within timeout
-                System.out.println("before FD: ELECTION " + inElection);
                 FailureDetector failureDetector = new FailureDetector(membershipTable, peerID, inElection, conn, brokerID, connMap, listening);
                 failureDetector.run();
                 inElection = failureDetector.getElectionStatus();
-                System.out.println("election after FD: " + inElection);
                 currentLeaderBeforeMarkDead = failureDetector.getCurrentLeaderBeforeMarkDead();
             }
         }

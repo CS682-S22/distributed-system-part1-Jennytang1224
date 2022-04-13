@@ -5,7 +5,6 @@ public class MemberInfo {
     boolean isLeader;
     boolean isAlive;
 
-
     public MemberInfo(String hostName, int port, String token, boolean isLeader, boolean isAlive) {
         this.hostName = hostName;
         this.port = port;
@@ -53,4 +52,6 @@ public class MemberInfo {
     public void setAlive(boolean alive) {
         isAlive = alive;
     }
+
+
 }

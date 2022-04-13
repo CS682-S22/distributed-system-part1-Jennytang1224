@@ -56,10 +56,6 @@ public class LeaderBasedReceiveProducerData implements Runnable{
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        //   }
-        //    System.out.println("topic map size: " + topicMap.size());
-
     }
 
     /**

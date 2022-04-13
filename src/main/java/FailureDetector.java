@@ -43,8 +43,18 @@ public class FailureDetector {
 
             if (membershipTable.getMemberInfo(peerID).isLeader) { // leader is dead
                 //if peerid is leader, bully (send initial election msg and wait for election response)
-                membershipTable.markDead(peerID);
+               // membershipTable.markDead(peerID);
+
+                //if this broker is leader, send table to load balancer
+//                if(membershipTable.getMemberInfo(brokerID).isLeader){
+//                    Utilities.sendMembershipTableUpdates(connMap.get(0), "updateAlive", brokerID, peerID,
+//                            "", 0, "", membershipTable.getMemberInfo(peerID).isLeader, false);
+//                    membershipTable.print();
+//                }
+                System.out.println("check...................................");
+                membershipTable.print();
                 BullyElection bully = new BullyElection(brokerID, membershipTable, connMap, conn);
+                System.out.println("peer id!!!!!" + peerID);
                 bully.run();
                 peerCounterForElection = bully.getPeerCounter();
                 System.out.println("~~~ # of peers that me (broker " + brokerID + ") send election msg to: " + peerCounterForElection);
@@ -52,6 +62,14 @@ public class FailureDetector {
                // membershipTable.switchLeaderShip(peerID, peerID + 1); // naively choosing next smallest id, change later
             } else { // if peerid is follower, update table  - mark dead
                 membershipTable.markDead(peerID);
+
+                //if this broker is leader, send table to load balancer
+                if(membershipTable.getMemberInfo(brokerID).isLeader){
+                    //send table to LB
+                    Utilities.sendMembershipTableUpdates(connMap.get(0), "updateAlive", brokerID, peerID,
+                            "", 0, "", membershipTable.getMemberInfo(peerID).isLeader, false);
+                    membershipTable.print();
+                }
                 inElection = false;
             }
 
@@ -64,12 +82,23 @@ public class FailureDetector {
 
         else{ // if expecting election msg, but nothing
             System.out.println("if expecting election msg, but nothing");
+           // if(!membershipTable.getMemberInfo(peerID).isLeader) {
 
-            membershipTable.markDead(peerID); // mark the peer is dead
+                membershipTable.markDead(peerID); // mark the peer is dead
+           // }
+
+            //if this broker is leader, send table to load balancer
+            if(membershipTable.getMemberInfo(brokerID).isLeader){
+                //send table to LB
+                Utilities.sendMembershipTableUpdates(connMap.get(0), "updateAlive", brokerID, peerID,
+                        "", 0, "", membershipTable.getMemberInfo(peerID).isLeader, false);
+                membershipTable.print();
+            }
+
             //   in the table, check if there's any lower id broker than me is alive, if not, im the leader
             for (int i = 1; i <= connMap.size(); i++) {
                 // int olderLeader = membershipTable.getLeaderID();
-                if ((membershipTable.getMemberInfo(i).isAlive) && (i < brokerID)) {
+                if ((membershipTable.membershipTable.containsKey(i)) && (membershipTable.getMemberInfo(i).isAlive) && (i < brokerID)) {
                     // there exists a more qualified broker than me to be the leader
                     System.out.println("im out..waiting for leader announcement from other broker..");
                     isThereLowerIDBroker = true;
@@ -81,6 +110,13 @@ public class FailureDetector {
             if(!isThereLowerIDBroker) { // if no such broker exists, im the new leader!
                 announceNewLeadership();
                 inElection = false;
+//
+//                //if this broker is leader, send table to load balancer
+//                if(membershipTable.getMemberInfo(brokerID).isLeader){
+//                    //send table to LB
+//                    Utilities.sendMembershipTableUpdates(connMap.get(0), "updateAlive", brokerID, peerID,
+//                            null, 0, "", membershipTable.getMemberInfo(peerID).isLeader, false);
+//                }
 
             }
         }
@@ -94,7 +130,7 @@ public class FailureDetector {
         // notify everyone im the new leader
         winnerId = brokerID;
         for (int peerID : connMap.keySet()) {
-            if ((membershipTable.getMemberInfo(peerID).isAlive)) { // only notify all living brokers
+            if ((membershipTable.membershipTable.containsKey(peerID)) && (membershipTable.getMemberInfo(peerID).isAlive)) { // only notify all living brokers
                 //get connection between this broker and the
                 Connection conn = connMap.get(peerID);
                 Resp.Response electionMessage = Resp.Response.newBuilder()
@@ -109,4 +145,5 @@ public class FailureDetector {
     public boolean getElectionStatus(){
         return inElection;
     }
+
 }

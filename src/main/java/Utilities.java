@@ -1,12 +1,17 @@
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import com.google.protobuf.ByteString;
+import dsd.pubsub.protos.BrokerToLoadBalancer;
+import dsd.pubsub.protos.PeerInfo;
+
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
 
 /**
  * A utility class for reading config files and getting ip and hostname
@@ -17,6 +22,7 @@ public class Utilities {
     static String InfoFileName = "files/InfoMap";
     static String offsetFilePath = "files/idMapOffset";
     private static String hostname;
+    private static String brokerConfigFile = "files/brokerConfig.json";
     static int numOfBrokersInSys = 5;
 
     /**
@@ -345,6 +351,147 @@ public class Utilities {
         catch(IOException e){
             System.out.println("file writing error :(");
         }
+    }
+
+
+
+
+    public static void sendMembershipTableUpdates(Connection connLB, String type, int senderID, int peerID,
+                                                  String peerHostName, int peerPort, String token, boolean isLeader, boolean isAlive){
+        BrokerToLoadBalancer.lb table = BrokerToLoadBalancer.lb.newBuilder()
+                .setType(type)
+                .setSenderID(senderID)
+                .setBrokerID(peerID)
+                .setHostName(peerHostName)
+                .setPort(peerPort)
+                .setToken(token)
+                .setIsLeader(isLeader)
+                .setIsAlive(isAlive)
+                .build();
+        connLB.send(table.toByteArray());
+        switch (type) {
+            case "new" -> System.out.println("Lead broker sent NEW MEMBER updates to Load Balancer ... \n");
+            case "updateLeader" -> System.out.println("Lead broker sent LEADER updates to Load Balancer ... \n");
+            case "updateAlive" -> System.out.println("Lead broker sent ALIVE updates to Load Balancer ... \n");
+        }
+    }
+
+
+
+    public static void leaderConnectToLB(String LBHostName, int LBPort, String senderHostName, int senderPort, Connection connLB){
+        System.out.println("Connected to LB : " + LBHostName + ":" + LBPort);
+        String type = "broker";
+        PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
+                .setType(type)
+                .setHostName(senderHostName)
+                .setPortNumber(senderPort)
+                .build();
+        connLB.send(peerInfo.toByteArray());
+        System.out.println("Lead broker sent peer info to Load Balancer ... \n");
+    }
+
+
+
+    public static String getHostnameByID(int id){
+        List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
+        IPMap ipMap = (IPMap) maps.get(0);
+        String peerHostName = ipMap.getIpById(String.valueOf(id));
+        return peerHostName;
+    }
+
+    public static int getPortByID(int id){
+        List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
+        PortMap portMap = (PortMap) maps.get(1);
+        int peerPort = Integer.parseInt(portMap.getPortById(String.valueOf(id)));
+        return peerPort;
+    }
+
+
+
+
+
+    public static String convertMapToString(ConcurrentHashMap<Integer, MemberInfo> membershipTable) {
+        ConcurrentHashMap<Integer, MemberInfo> map = membershipTable;
+        String mapAsString = map.keySet().stream()
+                .map(key -> key + "=" + map.get(key))
+                .collect(Collectors.joining(", ", "{", "}"));
+        return mapAsString;
+    }
+
+
+//    public static Map<Integer, MemberInfo> convertStringToMap(String mapAsString) {
+//        Map<Integer, MemberInfo> map = Arrays.stream(mapAsString.split(","))
+//                .map(entry -> entry.split("="))
+//                .collect(Collectors.toMap(entry -> entry[0], entry -> entry[1]));
+//        return map;
+//
+//    }
+    public static MembershipTable convertStringToMap(ByteString byteStr) {
+//        MembershipTable m = new MembershipTable();
+//        byte[] byteStr = str.toByteArray();
+//        m = (MembershipTable)SerializationUtils.deserialize(
+//                byteArray);
+//
+//        Object obj = new Object();
+//        ObjectInputStream bin;
+//        try {
+//            bin = new ObjectInputStream(new ByteArrayInputStream(byteStr));
+//            obj = bin.readObject();
+//        } catch (IOException | ClassNotFoundException exception) {
+//            exception.printStackTrace();
+//        }
+//        return (MembershipTable) obj;
+
+        String[] tokens = byteStr.toString().split(",");
+        MembershipTable map = new MembershipTable();
+        for (int i = 0; i < tokens.length - 1; i++) {
+            tokens[i] = tokens[i].replace("{","")
+                    .replace("}","")
+                    .replace(" ","");
+            String[] elements = tokens[i].split("=");
+            int id = Integer.parseInt(elements[0]); // key
+            String s = elements[1]; //val
+            System.out.println("memberInfo: " + s);
+            String[] items = s.split(",");
+            //System.out.println(items);
+            MemberInfo m = new MemberInfo(null, 0, null, false, false);
+            for(int j = 0; j < items.length - 1; j++) {
+                if (j == 0) { //hostname
+                    String[] splitted = items[j].split("=");
+                    String hostName = splitted[0];
+                    String hostNameVal = splitted[1];
+                    m.setHostName(hostNameVal);
+                }
+                if (j == 1) { //port
+                    String[] splitted = items[j].split("=");
+                    String port = splitted[0];
+                    int portVal = Integer.parseInt(splitted[1]);
+                    m.setPort(portVal);
+                }
+                if (j == 2) { //tokens
+                    String[] splitted = items[j].split("=");
+                    String token = splitted[0];
+                    String tokenVal = splitted[1];
+                    m.setToken(tokenVal);
+                }
+                if (j == 3) { //isLeader
+                    String[] splitted = items[j].split("=");
+                    String isLeader = splitted[0];
+                    boolean isLeaderVal = Boolean.parseBoolean(splitted[1]);
+                    m.setLeader(isLeaderVal);
+                }
+                if (j == 4) { //isALive
+                    String[] splitted = items[j].split("=");
+                    String isAlive = splitted[0];
+                    boolean isAliveVal = Boolean.parseBoolean(splitted[1]);
+                    m.setAlive(isAliveVal);
+                }
+            }
+            map.put(id, m);
+        }
+        return map;
+       // */
+
     }
 
 }
