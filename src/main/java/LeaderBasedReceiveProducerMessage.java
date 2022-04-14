@@ -13,10 +13,6 @@ public class LeaderBasedReceiveProducerMessage implements Runnable{
     private String offsetOutputPath = Utilities.offsetFilePath;
     private String infoOutputPath = Utilities.InfoFileName;
     private int messageCounter;
-//    private int offsetInMem;
-//    private int numOfBrokers;
-//    private int numOfPartitions;
-//    private HashMap<Integer, Connection> connMap;
     private HashMap<String, Integer> counterMap;
     private static HashMap<String, HashMap<Integer, CopyOnWriteArrayList<byte[]>>> topicMap;
     private Connection connWithLeadBroker;
@@ -25,10 +21,6 @@ public class LeaderBasedReceiveProducerMessage implements Runnable{
     public LeaderBasedReceiveProducerMessage( byte[] recordBytes, int messageCounter, HashMap<String, Integer> counterMap, Connection connWithLeadBroker, int currentLeadBroker) {
         this.recordBytes = recordBytes;
         this.messageCounter = messageCounter;
-//        this.offsetInMem = offsetInMem;
-//        this.numOfBrokers = numOfBrokers;
-//        this.numOfPartitions = numOfPartitions;
-
         this.counterMap = counterMap;
         topicMap = new HashMap<>();
         this.connWithLeadBroker = connWithLeadBroker;
@@ -58,10 +50,6 @@ public class LeaderBasedReceiveProducerMessage implements Runnable{
         String key = d.getKey();
         ByteString data = d.getValue();
 
-        // calculate partitionID ba & brokerID sed on key
-//        int partitionID = Utilities.CalculatePartition(key, numOfPartitions);
-//        int brokerID = Utilities.CalculateBroker(partitionID, numOfBrokers);
-
         // save intermediate file:  msgID, key, topic, partitionID, BrokerID
         String line;
         line = count + "," + key + "," + topic;
@@ -85,22 +73,6 @@ public class LeaderBasedReceiveProducerMessage implements Runnable{
         System.out.println(connWithLeadBroker);
         connWithLeadBroker.send(record.toByteArray());
         System.out.println("Message has been sent to the lead BROKER: " + currentLeadBroker );
-
-//        // save intermediate data msg id, offset of bytes
-//        String line1;
-//        if(this.messageCounter == 0){
-//            line1 = this.messageCounter + "," + 0;
-//        } else {
-//            offsetInMem += d.getOffset();
-//            line1 = this.messageCounter + "," + offsetInMem;
-//        }
-//        this.messageCounter++;
-//        byte[] arr1 = line1.getBytes(StandardCharsets.UTF_8);
-//        try {
-//            writeBytesToFile(offsetOutputPath, arr1);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
     }
 
     /**

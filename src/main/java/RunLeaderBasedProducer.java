@@ -13,8 +13,6 @@ public class RunLeaderBasedProducer {
         if(!Utilities.validateArgsProducer(args)){
             System.exit(-1);
         }
-//        String brokerLocation = args[0];
-//        String filepath = args[1]
         String LBLocation = "Jennys-MacBook-Pro.local:1430";
         String filepath = "files/100_records.log";
 
@@ -45,8 +43,6 @@ public class RunLeaderBasedProducer {
                     if (key.length() < 10) { // sanity check
                         // build protobuffer
                         offset = data.size();
-                        //System.out.println("set offset: " + offset);
-                        // offset += 1; // monotonically increasing
                         MessageInfo.Message record = MessageInfo.Message.newBuilder()
                                 .setTopic(topic)
                                 .setKey(key)

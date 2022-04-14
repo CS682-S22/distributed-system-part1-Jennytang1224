@@ -81,15 +81,12 @@ public class LeaderBasedLoadBalancer {
         boolean receiving = true;
         int counter = 0;
         private String type;
-//        int numOfBrokers;
-//        int numOfPartitions;
+        private int dataCounter = 0;
 
         public Receiver(String name, int port, Connection conn) {
             this.name = name;
             this.port = port;
             this.conn = conn;
-//            this.numOfBrokers = numberOfBrokers;
-//            this.numOfPartitions = numOfPartitions;
         }
 
         @Override
@@ -117,40 +114,39 @@ public class LeaderBasedLoadBalancer {
                             // get the messageInfo though socket
                             System.out.println("Load Balancer NOW has connected to producer: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
+                            String peerHostName = Utilities.getHostnameByID(currentLeadBroker);
+                            int peerPort = Utilities.getPortByID(currentLeadBroker);
+                            connWithLeadBroker = new Connection(peerHostName, peerPort, true);
+
+                            String type = "producer";
+                            PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
+                                    .setType(type)
+                                    .setHostName(name)
+                                    .setPortNumber(port)
+                                    .build();
+                            connWithLeadBroker.send(peerInfo.toByteArray());
+
                         }  else if (type.equals("consumer")) {
                             System.out.println("Load Balancer NOW has connected to consumer: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
                         } else if (type.equals("broker")) {
                             System.out.println("Load Balancer NOW has connected to load balancer: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
-                            //save connection with lead broker
-
                         }
                     }
                     else{ // when receiving data
                         if(type.equals("producer")) {
-                            //get connection with lead broker
-                           // System.out.println("conn with broker: " + connWithLeadBroker);
-                           // System.out.println("conn: " + conn);
-                            if(connWithLeadBroker == null){
-                                System.out.println("Haven't connected to the lead broker");
-                            }else {
-
                                 //send data to lead broker
-                                System.out.println("current lead broker before sending data: " + currentLeadBroker);
-                                Thread th = new Thread(new LeaderBasedReceiveProducerMessage(buffer, messageCounter, counterMap, conn, currentLeadBroker));
+                                Thread th = new Thread(new LeaderBasedReceiveProducerMessage(buffer, messageCounter, counterMap, connWithLeadBroker, currentLeadBroker));
                                 th.start();
                                 try {
                                     th.join();
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
-                            }
                             counter++;
                             messageCounter++;
                         }
-
-
 
                         else if (type.equals("consumer")) {
                             Thread th = new Thread(new LeaderBasedSendConsumerData(conn, buffer, topicMap));
@@ -187,7 +183,6 @@ public class LeaderBasedLoadBalancer {
                                 } else if(type.equals("updateLeader")){
                                     membershipTable.getMemberInfo(peerID).setAlive(b.getIsAlive());
                                     membershipTable.getMemberInfo(peerID).setLeader(b.getIsLeader());
-
                                 }
                             }
 

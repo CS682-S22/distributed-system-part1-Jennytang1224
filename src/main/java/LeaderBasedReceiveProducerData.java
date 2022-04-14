@@ -41,21 +41,9 @@ public class LeaderBasedReceiveProducerData implements Runnable{
             newList.add(recordBytes);
             topicMap.put(topic, newList);
         }
-        // save intermediate data msg id, offset of bytes
-        String line;
-        if(this.messageCounter == 0){
-            line = this.messageCounter + "," + 0;
-        } else {
-            offsetInMem += d.getOffset();
-            line = this.messageCounter + "," + offsetInMem;
-        }
+
         this.messageCounter++;
-        byte[] arr = line.getBytes(StandardCharsets.UTF_8);
-        try {
-            writeBytesToFile(outputPath, arr);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        System.out.println("number of messages received:" + messageCounter);
     }
 
     /**
