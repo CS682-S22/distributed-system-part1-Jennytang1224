@@ -34,7 +34,9 @@ public class LeaderBasedLoadBalancer {
     private static HashMap<String, Integer> counterMap = new HashMap<>();
     private String brokerConfigFile;
     private static MembershipTable membershipTable = new MembershipTable();
-    static Connection connWithLeadBroker;
+    static Connection connWithLeadBroker = null;
+    static int currentLeadBroker = 1;
+
 
 
     public LeaderBasedLoadBalancer(String hostName, int port) {
@@ -95,6 +97,7 @@ public class LeaderBasedLoadBalancer {
             PeerInfo.Peer p = null;
             while (receiving) {
                 byte[] buffer = conn.receive();
+
                 if (buffer == null || buffer.length == 0) {
                     // System.out.println("nothing received/ finished receiving");
                 }
@@ -121,24 +124,34 @@ public class LeaderBasedLoadBalancer {
                             System.out.println("Load Balancer NOW has connected to load balancer: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
                             //save connection with lead broker
-                            connWithLeadBroker = conn;
+
                         }
                     }
                     else{ // when receiving data
                         if(type.equals("producer")) {
                             //get connection with lead broker
+                           // System.out.println("conn with broker: " + connWithLeadBroker);
+                           // System.out.println("conn: " + conn);
+                            if(connWithLeadBroker == null){
+                                System.out.println("Haven't connected to the lead broker");
+                            }else {
 
-                            //send data to lead broker
-                            Thread th = new Thread(new LeaderBasedReceiveProducerMessage(buffer, messageCounter, counterMap, connWithLeadBroker));
-                            th.start();
-                            try {
-                                th.join();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
+                                //send data to lead broker
+                                System.out.println("current lead broker before sending data: " + currentLeadBroker);
+                                Thread th = new Thread(new LeaderBasedReceiveProducerMessage(buffer, messageCounter, counterMap, conn, currentLeadBroker));
+                                th.start();
+                                try {
+                                    th.join();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
                             }
                             counter++;
                             messageCounter++;
                         }
+
+
+
                         else if (type.equals("consumer")) {
                             Thread th = new Thread(new LeaderBasedSendConsumerData(conn, buffer, topicMap));
                             th.start();
@@ -149,6 +162,8 @@ public class LeaderBasedLoadBalancer {
                             }
                             counter++;
                         }
+
+
                         else if (type.equals("broker")) { //load Balancer hear from leader broker
                             // update membership table
 
@@ -179,6 +194,10 @@ public class LeaderBasedLoadBalancer {
                             System.out.println("TABLE ON LB after receiving updated table from leader broker:");
                             membershipTable.print();
                             counter++;
+
+                            currentLeadBroker = membershipTable.getLeaderID();
+                            System.out.println("currentLeadBroker: " + currentLeadBroker);
+                            connWithLeadBroker = conn;
                         }
 
                     }

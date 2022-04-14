@@ -140,7 +140,9 @@ public class LeaderBasedBroker {
                         else { // hear from producer/LB only bc this broker is a leader
                             // get the messageInfo though socket
                             type = "producer";
-                            System.out.println("this Broker now has connected to PRODUCER: " + peerHostName + " port: " + peerPort + "\n");
+                            System.out.println("this Broker now has connected to LB: " + peerHostName + " port: " + peerPort + "\n");
+
+
                             Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, buffer, topicMap, messageCounter, offsetInMem));
                             th.start();
                             try {
@@ -155,6 +157,9 @@ public class LeaderBasedBroker {
 
                     } else { // when receiving producer data
                         if (type.equals("producer")) {
+                            System.out.println();
+                            System.out.println("receive data from LB");
+
                             Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, buffer, topicMap, messageCounter, offsetInMem));
                             th.start();
                             try {
