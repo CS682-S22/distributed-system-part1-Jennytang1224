@@ -41,6 +41,12 @@ public final class Resp {
      * @return The winnerID.
      */
     int getWinnerID();
+
+    /**
+     * <code>bytes data = 4;</code>
+     * @return The data.
+     */
+    com.google.protobuf.ByteString getData();
   }
   /**
    * Protobuf type {@code Response}
@@ -56,6 +62,7 @@ public final class Resp {
     }
     private Response() {
       type_ = "";
+      data_ = com.google.protobuf.ByteString.EMPTY;
     }
 
     @java.lang.Override
@@ -102,6 +109,11 @@ public final class Resp {
             case 24: {
 
               winnerID_ = input.readInt32();
+              break;
+            }
+            case 34: {
+
+              data_ = input.readBytes();
               break;
             }
             default: {
@@ -196,6 +208,17 @@ public final class Resp {
       return winnerID_;
     }
 
+    public static final int DATA_FIELD_NUMBER = 4;
+    private com.google.protobuf.ByteString data_;
+    /**
+     * <code>bytes data = 4;</code>
+     * @return The data.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString getData() {
+      return data_;
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -219,6 +242,9 @@ public final class Resp {
       if (winnerID_ != 0) {
         output.writeInt32(3, winnerID_);
       }
+      if (!data_.isEmpty()) {
+        output.writeBytes(4, data_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -238,6 +264,10 @@ public final class Resp {
       if (winnerID_ != 0) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(3, winnerID_);
+      }
+      if (!data_.isEmpty()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(4, data_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -260,6 +290,8 @@ public final class Resp {
           != other.getSenderID()) return false;
       if (getWinnerID()
           != other.getWinnerID()) return false;
+      if (!getData()
+          .equals(other.getData())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
@@ -277,6 +309,8 @@ public final class Resp {
       hash = (53 * hash) + getSenderID();
       hash = (37 * hash) + WINNERID_FIELD_NUMBER;
       hash = (53 * hash) + getWinnerID();
+      hash = (37 * hash) + DATA_FIELD_NUMBER;
+      hash = (53 * hash) + getData().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -416,6 +450,8 @@ public final class Resp {
 
         winnerID_ = 0;
 
+        data_ = com.google.protobuf.ByteString.EMPTY;
+
         return this;
       }
 
@@ -445,6 +481,7 @@ public final class Resp {
         result.type_ = type_;
         result.senderID_ = senderID_;
         result.winnerID_ = winnerID_;
+        result.data_ = data_;
         onBuilt();
         return result;
       }
@@ -502,6 +539,9 @@ public final class Resp {
         }
         if (other.getWinnerID() != 0) {
           setWinnerID(other.getWinnerID());
+        }
+        if (other.getData() != com.google.protobuf.ByteString.EMPTY) {
+          setData(other.getData());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -669,6 +709,40 @@ public final class Resp {
         onChanged();
         return this;
       }
+
+      private com.google.protobuf.ByteString data_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>bytes data = 4;</code>
+       * @return The data.
+       */
+      @java.lang.Override
+      public com.google.protobuf.ByteString getData() {
+        return data_;
+      }
+      /**
+       * <code>bytes data = 4;</code>
+       * @param value The data to set.
+       * @return This builder for chaining.
+       */
+      public Builder setData(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        data_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>bytes data = 4;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearData() {
+        
+        data_ = getDefaultInstance().getData();
+        onChanged();
+        return this;
+      }
       @java.lang.Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -736,9 +810,10 @@ public final class Resp {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\021protos/resp.proto\"<\n\010Response\022\014\n\004type\030" +
+      "\n\021protos/resp.proto\"J\n\010Response\022\014\n\004type\030" +
       "\001 \001(\t\022\020\n\010senderID\030\002 \001(\005\022\020\n\010winnerID\030\003 \001(" +
-      "\005B\031\n\021dsd.pubsub.protosB\004Respb\006proto3"
+      "\005\022\014\n\004data\030\004 \001(\014B\031\n\021dsd.pubsub.protosB\004Re" +
+      "spb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -749,7 +824,7 @@ public final class Resp {
     internal_static_Response_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_Response_descriptor,
-        new java.lang.String[] { "Type", "SenderID", "WinnerID", });
+        new java.lang.String[] { "Type", "SenderID", "WinnerID", "Data", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

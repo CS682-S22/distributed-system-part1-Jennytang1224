@@ -68,12 +68,12 @@ public class FailureDetector {
                     //send table to LB
                     Utilities.sendMembershipTableUpdates(connMap.get(0), "updateAlive", brokerID, peerID,
                             "", 0, "", membershipTable.getMemberInfo(peerID).isLeader, false);
-                    membershipTable.print();
+                    //membershipTable.print();
                 }
                 inElection = false;
             }
 
-            System.out.println("~~~~~~~~~~~~~~~~~~table after " + peerID + " failed to return heartbeat msg");
+            System.out.println("~~~~~~~~~~~~~~~~~~table after detecting broker " + peerID + " failed to return heartbeat msg");
             membershipTable.print();
             System.out.println(" ");
             listening = false;

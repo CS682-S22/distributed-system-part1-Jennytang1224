@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+//from ProtocolBuffersExample directory compile this as follows:
+//protoc --java_out=src/main/java/ protos/brokerToLoadBalancer.proto
+
+option java_package = "dsd.pubsub.protos";
+option java_outer_classname = "BrokerToLoadBalancer";
+
+
+
+message lb{
+  string type = 1;
+  int32 senderID = 2;
+  int32 brokerID = 3;
+  //memberinfo
+  string hostName = 4;
+  int32 port = 5;
+  string token = 6;
+  bool isLeader = 7;
+  bool isAlive = 8;
+
+}
