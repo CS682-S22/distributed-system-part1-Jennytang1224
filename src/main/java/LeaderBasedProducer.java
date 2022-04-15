@@ -14,10 +14,10 @@ public class LeaderBasedProducer {
     private Connection connection;
 
 
-    public LeaderBasedProducer(String brokerLocation) {
-        this.brokerLocation = brokerLocation;
-        this.brokerHostName =brokerLocation.split(":")[0];
-        this.brokerPort = Integer.parseInt(brokerLocation.split(":")[1]);
+    public LeaderBasedProducer(String LBLocation) {
+        this.brokerLocation = LBLocation;
+        this.brokerHostName =LBLocation.split(":")[0];
+        this.brokerPort = Integer.parseInt(LBLocation.split(":")[1]);
         this.socket = null;
         try {
             this.socket = new Socket(this.brokerHostName, this.brokerPort);
@@ -28,15 +28,15 @@ public class LeaderBasedProducer {
             e.printStackTrace();
         }
 
-        System.out.println("this producer is connecting to broker " + brokerLocation);
+        System.out.println("this producer is connecting to broker " + LBLocation);
         // draft peerinfo
         String type = "producer";
         List<Object> maps = Utilities.readConfig();
         IPMap ipMap = (IPMap) maps.get(0);
         PortMap portMap = (PortMap) maps.get(1);
         String peerHostName = Utilities.getHostName();
-        int peerPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(peerHostName)));
-
+       // int peerPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(peerHostName)));
+        int peerPort = 1412;
         PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
                 .setType(type)
                 .setHostName(peerHostName)

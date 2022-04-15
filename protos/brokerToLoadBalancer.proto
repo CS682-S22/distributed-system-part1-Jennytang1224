@@ -18,5 +18,6 @@ message lb{
   string token = 6;
   bool isLeader = 7;
   bool isAlive = 8;
+  bytes data = 9;
 
 }

@@ -1,4 +1,6 @@
+import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import dsd.pubsub.protos.BrokerToLoadBalancer;
 import dsd.pubsub.protos.MessageInfo;
 
 import java.util.Map;
@@ -19,20 +21,16 @@ public class LeaderBasedSendConsumerData implements Runnable{
 
     @Override
     public void run() {
-        //  while(true) {
-        //  System.out.println("size of passed in topic map: " + this.topicMap.size());
-
         MessageInfo.Message d = null;
         try {
             d = MessageInfo.Message.parseFrom(recordBytes);
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
         }
+
         String topic = d.getTopic();
         startingPosition = d.getOffset();
-        System.out.println("Project2.Consumer subscribed to: " + topic + ", at position: " + startingPosition);
-        //offset to id
-        //   int id = Utilities.getIdByOffset(startingPosition, Utilities.offsetFilePath);
+        System.out.println("Consumer subscribed to: " + topic + ", at position: " + startingPosition);
 
         //in the hashmap, get the corresponding list of this topic
         if (!topicMap.containsKey(topic)) {
@@ -45,44 +43,22 @@ public class LeaderBasedSendConsumerData implements Runnable{
             System.out.println("No new Data yet...");
         }
         else {
-            // start getting the all record from this topic
+            // start getting all record from this topic
+            int count = 0;
             for (int i = startingPosition; i < topicList.size(); i++) {
+
                 byte[] singleRecord = topicList.get(i);
-                // send ALL record in this list to the consumer
-                connection.send(singleRecord);
-                System.out.println("A record has sent to the consumer");
+              //   send ALL record in this list to the consumer
+                BrokerToLoadBalancer.lb data = BrokerToLoadBalancer.lb.newBuilder()
+                        .setType("data")
+                        .setData(ByteString.copyFrom(singleRecord))
+                        .build();
+                connection.send(data.toByteArray());
+               // connection.send(singleRecord);
+                System.out.println("A record has been sent to the LB, count: " + count++);
             }
         }
 
-
-        //   int newStartingPosition = startingPosition;
-
-//            try {
-//                Thread.sleep(3000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-
-//
-//            int size = startingPosition + (topicList.size() - startingPosition);
-//            System.out.println("current starting position: " + startingPosition);
-//            System.out.println("size: " + size);
-//            newStartingPosition += size;
-//            System.out.println("new position: " + newStartingPosition);
-//
-//            Project2.Consumer consumer = new Project2.Consumer(connection, startingPosition);
-//            consumer.subscribe(topic, startingPosition);
-
-        notifyOtherBrokers();
-        //      }
-        //notify other brokers to send their data related to this topic to the consumer
-
-
     }
 
-
-    // broker1 will notify all other brokers to send this topic to the consumer
-    public static void notifyOtherBrokers(){
-
-    }
 }

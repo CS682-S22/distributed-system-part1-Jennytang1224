@@ -162,13 +162,18 @@ public class LeaderBasedBroker {
                         peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
 
                         if (type.equals("producer")) { // hear from producer/LB only bc this broker is a leader
-                            System.out.println("this Broker now has connected to LB: " + peerHostName + " port: " + peerPort + "\n");
+                            System.out.println("this Broker now has connected to LB(producer): " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
                         }
                         else if (type.equals("broker")) { // hear from other brokers: heartbeat/election
                             System.out.println("this broker NOW has connected to BROKER: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
                         }
+                        else if (type.equals("consumer")) { // hear from producer/LB only bc this broker is a leader
+                            System.out.println("this Broker now has connected to LB(consumer): " + peerHostName + " port: " + peerPort + "\n");
+                            counter++;
+                        }
+
                     }
 
                     else {
@@ -183,8 +188,6 @@ public class LeaderBasedBroker {
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
-
-
                                 if(!synchronous) { //replication with Asynchronous followers
                                     Replication replication = new Replication(membershipTable, buffer, brokerID, dataConnMap);//use data connections
                                    // replication.runAsyn();
@@ -194,14 +197,22 @@ public class LeaderBasedBroker {
 
 //
                                 }
-
-
-
-
-
                             }
                             counter++;
                             messageCounter++;
+                        }
+
+                        else if (type.equals("consumer")){
+                            System.out.println("receiving consumer request from LB...");
+                            Thread th = new Thread(new LeaderBasedSendConsumerData(connMap.get(0), buffer, topicMap));
+                            th.start();
+                            try {
+                                th.join();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            counter++;
+
                         }
                         else if (type.equals("broker")) {// when receiving msg from broker
                             // other send me heartbeat msg(me reply) / election(other inform new leader, me update table)/ election(other send election msg to me, needs reply to other broker )

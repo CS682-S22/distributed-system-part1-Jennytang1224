@@ -91,21 +91,14 @@ public final class BrokerToLoadBalancer {
      * @return The isAlive.
      */
     boolean getIsAlive();
+
+    /**
+     * <code>bytes data = 9;</code>
+     * @return The data.
+     */
+    com.google.protobuf.ByteString getData();
   }
   /**
-   * <pre>
-   *  message MemberInfo{
-   *    string hostName = 1;
-   *    int32 port = 2;
-   *    string token = 3;
-   *    bool isLeader = 4;
-   *    bool isAlive = 5;
-   *  }
-   *  message MembershipTable{
-   *    map&lt;int32, MemberInfo&gt; table = 6;
-   *  }
-   * </pre>
-   *
    * Protobuf type {@code lb}
    */
   public static final class lb extends
@@ -121,6 +114,7 @@ public final class BrokerToLoadBalancer {
       type_ = "";
       hostName_ = "";
       token_ = "";
+      data_ = com.google.protobuf.ByteString.EMPTY;
     }
 
     @java.lang.Override
@@ -194,6 +188,11 @@ public final class BrokerToLoadBalancer {
             case 64: {
 
               isAlive_ = input.readBool();
+              break;
+            }
+            case 74: {
+
+              data_ = input.readBytes();
               break;
             }
             default: {
@@ -405,6 +404,17 @@ public final class BrokerToLoadBalancer {
       return isAlive_;
     }
 
+    public static final int DATA_FIELD_NUMBER = 9;
+    private com.google.protobuf.ByteString data_;
+    /**
+     * <code>bytes data = 9;</code>
+     * @return The data.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString getData() {
+      return data_;
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -442,6 +452,9 @@ public final class BrokerToLoadBalancer {
       }
       if (isAlive_ != false) {
         output.writeBool(8, isAlive_);
+      }
+      if (!data_.isEmpty()) {
+        output.writeBytes(9, data_);
       }
       unknownFields.writeTo(output);
     }
@@ -481,6 +494,10 @@ public final class BrokerToLoadBalancer {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(8, isAlive_);
       }
+      if (!data_.isEmpty()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(9, data_);
+      }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
@@ -512,6 +529,8 @@ public final class BrokerToLoadBalancer {
           != other.getIsLeader()) return false;
       if (getIsAlive()
           != other.getIsAlive()) return false;
+      if (!getData()
+          .equals(other.getData())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
@@ -541,6 +560,8 @@ public final class BrokerToLoadBalancer {
       hash = (37 * hash) + ISALIVE_FIELD_NUMBER;
       hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
           getIsAlive());
+      hash = (37 * hash) + DATA_FIELD_NUMBER;
+      hash = (53 * hash) + getData().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -637,19 +658,6 @@ public final class BrokerToLoadBalancer {
       return builder;
     }
     /**
-     * <pre>
-     *  message MemberInfo{
-     *    string hostName = 1;
-     *    int32 port = 2;
-     *    string token = 3;
-     *    bool isLeader = 4;
-     *    bool isAlive = 5;
-     *  }
-     *  message MembershipTable{
-     *    map&lt;int32, MemberInfo&gt; table = 6;
-     *  }
-     * </pre>
-     *
      * Protobuf type {@code lb}
      */
     public static final class Builder extends
@@ -703,6 +711,8 @@ public final class BrokerToLoadBalancer {
 
         isAlive_ = false;
 
+        data_ = com.google.protobuf.ByteString.EMPTY;
+
         return this;
       }
 
@@ -737,6 +747,7 @@ public final class BrokerToLoadBalancer {
         result.token_ = token_;
         result.isLeader_ = isLeader_;
         result.isAlive_ = isAlive_;
+        result.data_ = data_;
         onBuilt();
         return result;
       }
@@ -811,6 +822,9 @@ public final class BrokerToLoadBalancer {
         }
         if (other.getIsAlive() != false) {
           setIsAlive(other.getIsAlive());
+        }
+        if (other.getData() != com.google.protobuf.ByteString.EMPTY) {
+          setData(other.getData());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -1243,6 +1257,40 @@ public final class BrokerToLoadBalancer {
         onChanged();
         return this;
       }
+
+      private com.google.protobuf.ByteString data_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>bytes data = 9;</code>
+       * @return The data.
+       */
+      @java.lang.Override
+      public com.google.protobuf.ByteString getData() {
+        return data_;
+      }
+      /**
+       * <code>bytes data = 9;</code>
+       * @param value The data to set.
+       * @return This builder for chaining.
+       */
+      public Builder setData(com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        data_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>bytes data = 9;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearData() {
+        
+        data_ = getDefaultInstance().getData();
+        onChanged();
+        return this;
+      }
       @java.lang.Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -1310,12 +1358,12 @@ public final class BrokerToLoadBalancer {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n!protos/brokerToLoadBalancer.proto\"\210\001\n\002" +
+      "\n!protos/brokerToLoadBalancer.proto\"\226\001\n\002" +
       "lb\022\014\n\004type\030\001 \001(\t\022\020\n\010senderID\030\002 \001(\005\022\020\n\010br" +
       "okerID\030\003 \001(\005\022\020\n\010hostName\030\004 \001(\t\022\014\n\004port\030\005" +
       " \001(\005\022\r\n\005token\030\006 \001(\t\022\020\n\010isLeader\030\007 \001(\010\022\017\n" +
-      "\007isAlive\030\010 \001(\010B)\n\021dsd.pubsub.protosB\024Bro" +
-      "kerToLoadBalancerb\006proto3"
+      "\007isAlive\030\010 \001(\010\022\014\n\004data\030\t \001(\014B)\n\021dsd.pubs" +
+      "ub.protosB\024BrokerToLoadBalancerb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -1326,7 +1374,7 @@ public final class BrokerToLoadBalancer {
     internal_static_lb_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_lb_descriptor,
-        new java.lang.String[] { "Type", "SenderID", "BrokerID", "HostName", "Port", "Token", "IsLeader", "IsAlive", });
+        new java.lang.String[] { "Type", "SenderID", "BrokerID", "HostName", "Port", "Token", "IsLeader", "IsAlive", "Data", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

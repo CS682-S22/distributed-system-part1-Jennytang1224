@@ -410,7 +410,6 @@ public class Utilities {
         List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
         PortMap portMap = (PortMap) maps.get(1);
         int peerPort = Integer.parseInt(portMap.getPortRepById(String.valueOf(id)));
-        System.out.println("peer port in util: " + peerPort);
         return peerPort;
     }
 

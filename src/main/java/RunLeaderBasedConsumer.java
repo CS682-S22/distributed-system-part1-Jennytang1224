@@ -19,13 +19,13 @@ public class RunLeaderBasedConsumer {
             return;
         }
 
-        String brokerLocation = args[0];
+        String LBLocation = args[0];
         String topic = args[1];
         int startingPosition = Integer.parseInt(args[2]);
 
-        LeaderBasedConsumer consumer = new LeaderBasedConsumer(brokerLocation, topic, startingPosition);
+        LeaderBasedConsumer consumer = new LeaderBasedConsumer(LBLocation, topic, startingPosition);
         //running application thread for pulling
-        RunLeaderBasedApplication app = new RunLeaderBasedApplication(brokerLocation, topic, startingPosition, consumer);
+        RunLeaderBasedApplication app = new RunLeaderBasedApplication(LBLocation, topic, startingPosition, consumer);
         Thread runApp = new Thread(app);
         runApp.start();
 
