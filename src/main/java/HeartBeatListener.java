@@ -62,7 +62,7 @@ public class HeartBeatListener implements Runnable {
             // if there's response within timeout
             if (f != null) {
                 //check if f is heartbeat or election message
-                System.out.println("type in listener: " + f.getType());
+                //System.out.println("type in listener: " + f.getType());
                 if (f.getType().equals("heartbeat")) {
                     inElection = false;
                 } else if (f.getType().equals("election")) {

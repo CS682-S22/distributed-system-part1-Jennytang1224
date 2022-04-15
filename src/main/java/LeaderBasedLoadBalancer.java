@@ -1,5 +1,6 @@
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import dsd.pubsub.protos.Acknowledgment;
 import dsd.pubsub.protos.BrokerToLoadBalancer;
 import dsd.pubsub.protos.MessageInfo;
 import dsd.pubsub.protos.PeerInfo;
@@ -7,6 +8,7 @@ import dsd.pubsub.protos.PeerInfo;
 import java.io.*;
 import java.net.ProtocolException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,18 +123,29 @@ public class LeaderBasedLoadBalancer {
                         if (type.equals("producer")) {
                             System.out.println("Load Balancer NOW has connected to producer: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
-
-                            String peerHostName = Utilities.getHostnameByID(currentLeadBroker);
-                            int peerPort = Utilities.getPortByID(currentLeadBroker);
-                            connWithLeadBrokerProd = new Connection(peerHostName, peerPort, true);
-
-                            String type = "producer";
-                            PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
-                                    .setType(type)
-                                    .setHostName(name)
-                                    .setPortNumber(port)
+                            //send lead broker location to producer
+                            String leadBrokerName = membershipTable.getMemberInfo(currentLeadBroker).getHostName();
+                            String leadBrokerPort = String.valueOf(membershipTable.getMemberInfo(currentLeadBroker).getPort());
+                            String leadBrokerLocation = leadBrokerName + ":" + leadBrokerPort;
+                            Acknowledgment.ack response = Acknowledgment.ack.newBuilder()
+                                    .setSenderType("loadBalancer")
+                                    .setLeadBrokerLocation(leadBrokerLocation)
                                     .build();
-                            connWithLeadBrokerProd.send(peerInfo.toByteArray());
+                            conn.send(response.toByteArray());
+                            System.out.println("LB sends leadBrokerLocation to producer: " + leadBrokerLocation);
+
+
+//                            String peerHostName = Utilities.getHostnameByID(currentLeadBroker);
+//                            int peerPort = Utilities.getPortByID(currentLeadBroker);
+//                            connWithLeadBrokerProd = new Connection(peerHostName, peerPort, true);
+
+//                            String type = "producer";
+//                            PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
+//                                    .setType(type)
+//                                    .setHostName(name)
+//                                    .setPortNumber(port)
+//                                    .build();
+//                            connWithLeadBrokerProd.send(peerInfo.toByteArray());
 
                         } else if (type.equals("consumer")) {
                             System.out.println("Load Balancer NOW has connected to consumer: " + peerHostName + " port: " + peerPort + "\n");
@@ -159,6 +172,7 @@ public class LeaderBasedLoadBalancer {
                     } else { // when receiving data
                         if (type.equals("producer")) {
                             //send data to lead broker
+
                             Thread th = new Thread(new LeaderBasedReceiveProducerMessage(buffer, messageCounter, counterMap, connWithLeadBrokerProd, currentLeadBroker));
                             th.start();
                             try {
@@ -166,36 +180,13 @@ public class LeaderBasedLoadBalancer {
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
+
                             counter++;
                             messageCounter++;
                         } else if (type.equals("consumer")) {
                             System.out.println("forward request to lead broker...");
                             connWithLeadBrokerCons.send(buffer);
                             counter++;
-
-
-//
-//
-//                        //    conn.send(buffer); // conn is still with consumer
-////                            try {
-////                                Thread.sleep(3000);
-////                            } catch (InterruptedException e) {
-////                                e.printStackTrace();
-////                            }
-////                                // send data to consumer
-//                                BrokerToLoadBalancer.lb b = null;
-//                                try {
-//                                    b = BrokerToLoadBalancer.lb.parseFrom(buffer);
-//                                } catch (InvalidProtocolBufferException e) {
-//                                    e.printStackTrace();
-//                                }
-//                                if(b != null) {
-//                                    byte[] record = b.getData().toByteArray();
-//                                    conn.send(record);
-//                                    System.out.println("LB sends a record to Consumer");
-//                                    counter++;
-//                                }
-
 
                         } else if (type.equals("broker")) { //load Balancer hear from leader broker
                             // update membership table

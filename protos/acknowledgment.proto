@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+//from ProtocolBuffersExample directory compile this as follows:
+//protoc --java_out=src/main/java/ protos/acknowledgment.proto
+
+option java_package = "dsd.pubsub.protos";
+option java_outer_classname = "Acknowledgment";
+
+
+message ack{
+  string senderType = 1; // broker or LB
+  int32 seqNum = 2;
+  string leadBrokerLocation = 3;
+  bytes data = 4;
+}

@@ -7,6 +7,8 @@ import dsd.pubsub.protos.*;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -43,7 +45,8 @@ public class LeaderBasedBroker {
     static Server dataServer;
     static HashMap<Integer, Connection> dataConnMap = new HashMap<>();
     static int dataCounter = 0;
-    static boolean synchronous = false;
+    static boolean synchronous = true;
+    static int ackCount = 0;
 
 
 
@@ -120,6 +123,7 @@ public class LeaderBasedBroker {
         heartBeatConnector.start();
     }
 
+
     /**
      * inner class Receiver
      */
@@ -161,8 +165,8 @@ public class LeaderBasedBroker {
                         peerPort = p.getPortNumber();
                         peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
 
-                        if (type.equals("producer")) { // hear from producer/LB only bc this broker is a leader
-                            System.out.println("this Broker now has connected to LB(producer): " + peerHostName + " port: " + peerPort + "\n");
+                        if (type.equals("producer")) { // hear from producer only bc this broker is a leader
+                            System.out.println("this Broker now has connected to PRODUCER: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
                         }
                         else if (type.equals("broker")) { // hear from other brokers: heartbeat/election
@@ -178,24 +182,37 @@ public class LeaderBasedBroker {
 
                     else {
                         if (type.equals("producer")) {  // when receiving data from LB/producer
-                            System.out.println("receiving data from LB...");
+                            System.out.println("!!!!!!!!! receiving data from producer...");
                             synchronized (this) {
-                                //save data to my topic map
-                                Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, buffer, topicMap, messageCounter, offsetInMem));
+                                //save data to my topic map:
+                                Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, ByteString.copyFrom(buffer), topicMap, messageCounter, offsetInMem));
                                 th.start();
                                 try {
                                     th.join();
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
+
+                                //replications:
                                 if(!synchronous) { //replication with Asynchronous followers
-                                    Replication replication = new Replication(membershipTable, buffer, brokerID, dataConnMap);//use data connections
-                                   // replication.runAsyn();
-                                    Thread rep = new Thread(replication);
+                                    AsynchronousReplication asynchronousReplication = new AsynchronousReplication(membershipTable, buffer, brokerID, dataConnMap);//use data connections
+                                 //   replication.run();
+                                    Thread rep = new Thread(asynchronousReplication);
                                     rep.start();
                                 }else{ //replication with Synchronous followers
+                                    //need to send ack
+                                    SynchronousReplication synchronousReplication = new SynchronousReplication(membershipTable, buffer, brokerID, dataConnMap);//use data connections
+                                    //   replication.run();
+                                    Thread rep = new Thread(synchronousReplication);
+                                    rep.start();
+                                    if(ackCount == synchronousReplication.numOfAckNeeded){//all followers get replica
+                                        //send producer a big ack for next data
+                                        Acknowledgment.ack ackToProducer = Acknowledgment.ack.newBuilder()
+                                                .setSenderType("leadBroker")
+                                                .build();
+                                        conn.send(ackToProducer.toByteArray());
+                                    }
 
-//
                                 }
                             }
                             counter++;
@@ -223,7 +240,7 @@ public class LeaderBasedBroker {
                                 exception.printStackTrace();
                             }
                             if (f != null) {
-                                System.out.println("type in broker: " + f.getType());
+                               // System.out.println("type in broker: " + f.getType());
                                 if (f.getType().equals("heartbeat")) {
                                     inElection = false;
                                 } else if (f.getType().equals("election")) {
@@ -234,7 +251,7 @@ public class LeaderBasedBroker {
 
                                 if (!inElection) { // if its heartbeat, me reply
                                     int senderId = f.getSenderID();
-                                    System.out.println("broker " + brokerID + " receiving heartbeat from broker " + senderId + "...");
+                                  //  System.out.println("broker " + brokerID + " receiving heartbeat from broker " + senderId + "...");
 
                                     // receive heartbeat from broker and response with its own id
                                     Resp.Response heartBeatResponse = Resp.Response.newBuilder()
@@ -245,7 +262,7 @@ public class LeaderBasedBroker {
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }
-                                    membershipTable.getMemberInfo(senderId).setAlive(true);
+                                  //  membershipTable.getMemberInfo(senderId).setAlive(true);
 
                                 } else if (inElection && !f.getType().equals("heartbeat")) { // if election msg
                                     int senderId = f.getSenderID();
@@ -361,7 +378,7 @@ public class LeaderBasedBroker {
                         peerHostName = p.getHostName();
                         peerPort = p.getPortNumber();
                         peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
-                        System.out.println("~~~~~~~    " + peerHostName + ":" + peerPort + " " + peerID );
+                     //   System.out.println("~~~~~~~    " + peerHostName + ":" + peerPort + " " + peerID );
                         if (type.equals("broker")) { // other brokers
                             System.out.println("this broker on data port has connected to BROKER " + peerHostName + ":" + peerPort + "\n");
                             counter++;
@@ -369,21 +386,44 @@ public class LeaderBasedBroker {
 
                     } else { // when receiving leader data
                         if (type.equals("broker")) { //leader sending data copy
-                            try {
-                                f = MessageInfo.Message.parseFrom(buffer);
+                          //  System.out.println( brokerID + " received replica from lead broker ");
+//                            try {
+//                                f = MessageInfo.Message.parseFrom(buffer);
+//                            } catch (InvalidProtocolBufferException e) {
+//                                e.printStackTrace();
+//                            }
+                            Acknowledgment.ack m = null;
+                            try{
+                                m = Acknowledgment.ack.parseFrom(buffer);
                             } catch (InvalidProtocolBufferException e) {
                                 e.printStackTrace();
                             }
-                            if (f != null) {
-                                System.out.println("Follower " + brokerID + " received data replication !!!");
-                                byte[] dataInBytes = f.getValue().toByteArray();
-                                Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, dataInBytes, topicMap, dataCounter, offsetInMem));
-                                th.start();
-                                try {
-                                    th.join();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
+                            if ( m != null) {
+                                if(m.getSenderType().equals("data")){
+                                    System.out.println(">>> Follower " + brokerID + " received data replication !!!");
+
+                                    //send ack back to leader:
+                                    Acknowledgment.ack ack = Acknowledgment.ack.newBuilder()
+                                            .setSenderType("ack").build();
+
+                                    conn.send(ack.toByteArray());
+                                    System.out.println(">>> sent ack back to the lead broker!!!!!!");
+
+                                    //store data
+                                    ByteString dataInBytes = m.getData();
+                                    Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, dataInBytes, topicMap, dataCounter, offsetInMem));
+                                    th.start();
+                                    try {
+                                        th.join();
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+
+                                } else if(m.getSenderType().equals("ack")){ //only lead broker will receive ack
+                                    System.out.println("~~~~~~~~~AN ACK received ");
+                                    ackCount++;
                                 }
+
                                 dataCounter++;
                                 counter++;
                             }
@@ -479,7 +519,7 @@ public class LeaderBasedBroker {
                             .build();
 
                     connection.send(peerInfo.toByteArray());
-                    System.out.println("sent peer info to broker " + peerID + "...\n");
+                  //  System.out.println("sent peer info to broker " + peerID + "...\n");
 
                     try {
                         Thread.sleep(3000);

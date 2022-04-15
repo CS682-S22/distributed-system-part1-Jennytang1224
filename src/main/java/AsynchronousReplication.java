@@ -6,14 +6,14 @@ import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class Replication implements Runnable{
+public class AsynchronousReplication implements Runnable{
     MembershipTable membershipTable;
     byte[] buffer;
     int brokerID;
     HashMap<Integer, Connection> dataConnMap;
     private static ExecutorService executor;
 
-    public Replication(MembershipTable membershipTable, byte[] buffer, int brokerID, HashMap<Integer, Connection> dataConnMap) {
+    public AsynchronousReplication(MembershipTable membershipTable, byte[] buffer, int brokerID, HashMap<Integer, Connection> dataConnMap) {
         this.membershipTable = membershipTable;
         this.buffer = buffer;
         this.brokerID = brokerID;
@@ -22,9 +22,11 @@ public class Replication implements Runnable{
         executor = Executors.newFixedThreadPool(10);
     }
 
+
+
     @Override
     public void run() {
-        Runnable add = () -> {
+        Runnable replication = () -> {
             for (int id : membershipTable.getKeys()) {
                 if (membershipTable.getMemberInfo(id).isAlive && id != brokerID) {
                     //draft data
@@ -39,7 +41,7 @@ public class Replication implements Runnable{
             }
         };
     //    synchronized (this) {
-            executor.execute(add);
+            executor.execute(replication);
      //   }
     }
 

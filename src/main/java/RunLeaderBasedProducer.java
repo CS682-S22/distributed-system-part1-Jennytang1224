@@ -1,22 +1,59 @@
 import com.google.protobuf.ByteString;
+import com.google.protobuf.CodedInputStream;
 import dsd.pubsub.protos.MessageInfo;
+import dsd.pubsub.protos.PeerInfo;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.Socket;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class RunLeaderBasedProducer {
     public static void main(String[] args){
-        //usage: LBlocation filepath
+        //usage: brokerLocation filepath
         if(!Utilities.validateArgsProducer(args)){
             System.exit(-1);
         }
         String LBLocation = "Jennys-MacBook-Pro.local:1430";
         String filepath = "files/100_records.log";
 
+//        //get lead broker location from LB
+//        Socket socket = null;
+//        Connection connectionWithLB = null;
+//        String LBHostName = LBLocation.split(":")[0];
+//        int LBPort = Integer.parseInt(LBLocation.split(":")[1]);
+//        try {
+//            socket = new Socket(LBHostName, LBPort);
+//            connectionWithLB = new Connection(socket);
+//            System.out.println("producer connect to load balancer for lead broker address");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        String peerHostName = Utilities.getHostName();
+//        int peerPort = 1412;
+//        PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
+//                .setType("producer")
+//                .setHostName(peerHostName)
+//                .setPortNumber(peerPort)
+//                .build();
+//        connectionWithLB.send(peerInfo.toByteArray());
+//
+//        System.out.println("producer sends first msg to LB with its identity...\n");
+//
+
+
+
+        boolean receivedAck = true;
         LeaderBasedProducer leaderBasedProducer = new LeaderBasedProducer(LBLocation);
+        try { // every 3 sec request new data
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        String leadBrokerLocation = leaderBasedProducer.getLeadBrokerLocation();
+        LeaderBasedProducer leaderBasedProducerToBroker = new LeaderBasedProducer(leadBrokerLocation);
+
 
         // for each data record, send topic, key and data
         ByteString data = null;
@@ -50,11 +87,23 @@ public class RunLeaderBasedProducer {
                                 .setPartition(partition)
                                 .setOffset(offset)
                                 .build();
+
                         // producer send record to broker
-                        leaderBasedProducer.send(record.toByteArray());
-                        System.out.println("message has been send!");
+                        leaderBasedProducerToBroker.send(record.toByteArray());
+
+                        receivedAck = leaderBasedProducerToBroker.getAckStatus();
+                        if(!receivedAck) {
+                            System.out.println("DID NOT RECEIVE ACK FROM LEAD BROKER...");
+                            break;
+                        }else {
+                            leaderBasedProducerToBroker.send(record.toByteArray());
+                            System.out.println("message has been send!");
+                        }
                     }
                 }
+                //reset receivedAck to false everytime
+                receivedAck = false;
+
             }
             fstream.close();
         } catch (Exception e) {
