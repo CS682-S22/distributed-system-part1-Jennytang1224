@@ -10,7 +10,6 @@ message Response{
   string type = 1;
   int32 senderID = 2;
   int32 winnerID = 3;
-  bytes data = 4;
 }
 
 
