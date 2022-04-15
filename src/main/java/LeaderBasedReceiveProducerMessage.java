@@ -70,7 +70,6 @@ public class LeaderBasedReceiveProducerMessage implements Runnable{
                 .build();
 
         // send to broker
-        System.out.println(connWithLeadBroker);
         connWithLeadBroker.send(record.toByteArray());
         System.out.println("Message has been sent to the lead BROKER: " + currentLeadBroker );
     }

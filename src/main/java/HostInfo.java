@@ -5,11 +5,13 @@ public class HostInfo {
     private String host_id;
     private String ip_address;
     private String port_number;
+    private String port_number_rep;
 
-    public HostInfo(String host_id, String ip_address, String port_number) {
+    public HostInfo(String host_id, String ip_address, String port_number, String port_number_rep) {
         this.host_id = host_id;
         this.ip_address = ip_address;
         this.port_number = port_number;
+        this.port_number_rep = port_number_rep;
     }
 
     /**
@@ -53,4 +55,13 @@ public class HostInfo {
     public void setPort_number(String port_number) {
         this.port_number = port_number;
     }
+
+    public String getPort_number_rep() {
+        return port_number_rep;
+    }
+
+    public void setPort_number_rep(String port_number_rep) {
+        this.port_number_rep = port_number_rep;
+    }
+
 }

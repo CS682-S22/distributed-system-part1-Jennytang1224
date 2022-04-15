@@ -78,11 +78,11 @@ public class HeartBeatListener implements Runnable {
 
                     Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
                     conn.send(heartBeatMessage.toByteArray());
-//                    try {
-//                        Thread.sleep(500);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
+                    try { // speed of heartbeat
+                        Thread.sleep(1500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
 
                 }
                 else if(inElection){// if its election response

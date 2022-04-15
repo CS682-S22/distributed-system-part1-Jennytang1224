@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+// receive data and store them in topic map as {topic1: [..,..,..], topic2: [..,..,..,..,..,]}
 public class LeaderBasedReceiveProducerData implements Runnable{
     static Connection connection;
     byte[] recordBytes;
@@ -44,22 +45,6 @@ public class LeaderBasedReceiveProducerData implements Runnable{
 
         this.messageCounter++;
         System.out.println("number of messages received:" + messageCounter);
-    }
-
-    /**
-     * write bytes to files
-     */
-    private static void writeBytesToFile(String fileOutput, byte[] buf)
-            throws IOException {
-        try (FileOutputStream fos = new FileOutputStream(fileOutput, true)) {
-            System.out.println("Producer sends offset data to the disk...");
-            fos.write(buf);
-            fos.write(10); //newline
-            fos.flush();
-        }
-        catch(IOException e){
-            System.out.println("file writing error :(");
-        }
     }
 
 
