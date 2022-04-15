@@ -146,7 +146,7 @@ public class Utilities {
                     try { //skip bad line
                         hostInfo = gson.fromJson(line, HostInfo.class);
                         ipMap.put(hostInfo.getHost_id(), hostInfo.getIp_address());
-                        portMap.put(hostInfo.getHost_id(), hostInfo.getPort_number());
+                        portMap.put(hostInfo.getHost_id(), hostInfo.getPort_number(), hostInfo.getPort_number_rep());
 
                     } catch (JsonSyntaxException e) {
                         System.out.println("skip a bad line...");
@@ -182,7 +182,7 @@ public class Utilities {
                     try { //skip bad line
                         hostInfo = gson.fromJson(line, HostInfo.class);
                         ipMap.put(hostInfo.getHost_id(), hostInfo.getIp_address());
-                        portMap.put(hostInfo.getHost_id(), hostInfo.getPort_number());
+                        portMap.put(hostInfo.getHost_id(), hostInfo.getPort_number(), hostInfo.getPort_number_rep());
 
                     } catch (JsonSyntaxException e) {
                         System.out.println("skip a bad line...");
@@ -314,10 +314,10 @@ public class Utilities {
             while ((line = br.readLine()) != null) {
                 if ((!line.equals(""))) {
                     try { //skip bad line
-
                         String[] splitLine = line.replace("\"", "").replace("}", "").replace(" ", "").split(",");
                         if (splitLine[1].split(":")[1].equalsIgnoreCase(brokerHostName)){
-                            if(splitLine[2].split(":")[1].equalsIgnoreCase(brokerPort)){
+                            if(splitLine[2].split(":")[1].equalsIgnoreCase(brokerPort)
+                                    || splitLine[3].split(":")[1].equalsIgnoreCase(brokerPort) ){
                                 brokerID = Integer.parseInt(splitLine[0].split(":")[1]);
                                 return brokerID;
                             }
@@ -406,9 +406,13 @@ public class Utilities {
         return peerPort;
     }
 
-
-
-
+    public static int getPortRepByID(int id){
+        List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
+        PortMap portMap = (PortMap) maps.get(1);
+        int peerPort = Integer.parseInt(portMap.getPortRepById(String.valueOf(id)));
+        System.out.println("peer port in util: " + peerPort);
+        return peerPort;
+    }
 
     public static String convertMapToString(ConcurrentHashMap<Integer, MemberInfo> membershipTable) {
         ConcurrentHashMap<Integer, MemberInfo> map = membershipTable;
@@ -490,7 +494,7 @@ public class Utilities {
             map.put(id, m);
         }
         return map;
-       // */
+
 
     }
 
