@@ -1,6 +1,8 @@
 import dsd.pubsub.protos.Acknowledgment;
 import dsd.pubsub.protos.MessageInfo;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+
 import com.google.protobuf.InvalidProtocolBufferException;
 
 
@@ -27,7 +29,7 @@ public class RunLeaderBasedApplication implements Runnable {
 
            //  application polls from bq
             try {
-                m = consumer.poll(300);
+                m = consumer.poll(30);
             } catch (NullPointerException e){
             }
             if (m != null) { // received within timeout
@@ -37,7 +39,8 @@ public class RunLeaderBasedApplication implements Runnable {
                 } catch (InvalidProtocolBufferException e) {
                     e.printStackTrace();
                 }
-                byte[] arr = d.getData().toByteArray();
+           //    byte[] arr = d.getData().toByteArray();
+                byte[] arr = d.getData().toString(StandardCharsets.ISO_8859_1).getBytes(StandardCharsets.ISO_8859_1);
 
                 try {
                     Utilities.writeBytesToFile(fileOutput, arr);

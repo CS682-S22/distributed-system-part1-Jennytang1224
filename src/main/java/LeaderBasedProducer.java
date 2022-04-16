@@ -19,7 +19,7 @@ public class LeaderBasedProducer {
     int peerPort;
     static String leadBrokerLocation;
     Receiver newReceiver;
-    static boolean receivedAck;
+    static boolean receivedAck = false;
 
     public LeaderBasedProducer(String BrokerLocation) {
         this.brokerLocation = BrokerLocation;
@@ -71,7 +71,8 @@ public class LeaderBasedProducer {
     }
 
     public boolean getAckStatus(){
-        return receivedAck;
+        System.out.println("inside getter: " + newReceiver.receivedAck);
+        return  newReceiver.receivedAck;
     }
 
 
@@ -82,6 +83,7 @@ public class LeaderBasedProducer {
         boolean receiving = true;
         int counter = 0;
         String type;
+        boolean receivedAck = false;
 
         public Receiver(String name, int port, Connection conn) {
             this.name = name;
@@ -94,8 +96,10 @@ public class LeaderBasedProducer {
         public void run() {
             Acknowledgment.ack response = null;
             while (receiving) {
+
                 byte[] buffer = conn.receive();
                 if (buffer == null || buffer.length == 0) {
+                    //receivedAck = false;
                     // System.out.println("nothing received/ finished receiving");
                 } else {// Receive from LB
                     try {
@@ -106,8 +110,14 @@ public class LeaderBasedProducer {
                     if (response.getSenderType().equals("loadBalancer")) {//broker location
                         leadBrokerLocation = response.getLeadBrokerLocation();
                         System.out.println("received lead broker location from LB: " + leadBrokerLocation);
-                    } else if (response.getSenderType().equals("leadBroker")) { // ack on data
+                    }
+                    else if (response.getSenderType().equals("leadBrokerACK")) { // ack on data
+                        System.out.println("received ack from lead broker!!!!");
                         receivedAck = true;
+                    }
+                    else if (response.getSenderType().equals("leadBrokerNOACK")) {
+                        System.out.println("NO ack from lead broker!!!!");
+                        receivedAck = false;
                     }
                 }
             }

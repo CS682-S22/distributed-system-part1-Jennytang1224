@@ -1,4 +1,5 @@
 import com.google.protobuf.ByteString;
+import dsd.pubsub.protos.Acknowledgment;
 import dsd.pubsub.protos.MessageInfo;
 import dsd.pubsub.protos.Resp;
 
@@ -28,13 +29,16 @@ public class AsynchronousReplication implements Runnable{
             for (int id : membershipTable.getKeys()) {
                 if (membershipTable.getMemberInfo(id).isAlive && id != brokerID) {
                     //draft data
-                    ByteString b = ByteString.copyFrom(buffer);
-                    MessageInfo.Message record = MessageInfo.Message.newBuilder()
-                            .setValue(b)
+//                    ByteString b = ByteString.copyFrom(buffer);
+//                    MessageInfo.Message record = MessageInfo.Message.newBuilder()
+//                            .setValue(b)
+//                            .build();
+                    Acknowledgment.ack record = Acknowledgment.ack.newBuilder()
+                            .setSenderType("data")
+                            .setData(ByteString.copyFrom(buffer))
                             .build();
-
                     (dataConnMap.get(id)).send(record.toByteArray()); // send data message
-                    System.out.println("this lead broker sent replication of data to follower " + id);
+                    System.out.println("this lead broker sent Asynchronous replication of data to follower " + id);
                 }
             }
         };

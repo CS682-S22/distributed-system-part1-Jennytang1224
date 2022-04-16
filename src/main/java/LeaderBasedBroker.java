@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class LeaderBasedBroker {
@@ -47,21 +48,21 @@ public class LeaderBasedBroker {
     static Server dataServer;
     static HashMap<Integer, Connection> dataConnMap = new HashMap<>();
     static int dataCounter = 0;
-    static boolean synchronous = true;
-
+    static boolean synchronous;
     static Connection connWithProducer;
     static Connection connWithConsumer;
     static DataReceiver dr;
+    static SynchronousReplication synchronousReplication;
+    static AsynchronousReplication asynchronousReplication;
 
-
-
-    public LeaderBasedBroker(String hostName, int port, int dataPort) {
+    public LeaderBasedBroker(String hostName, int port, int dataPort, boolean synchronous) {
         this.hostName = hostName;
         this.port = port;
         this.topicList = new CopyOnWriteArrayList<>();
         this.topicMap = new HashMap<>();
         this.executor = Executors.newSingleThreadExecutor();
         this.dataPort = dataPort;
+        this.synchronous = synchronous;
     }
 
 
@@ -83,16 +84,16 @@ public class LeaderBasedBroker {
             }
             while (running) {
                 Connection dataConnection = this.dataServer.nextConnection(); // calls accept on server socket to block
-                dr = new DataReceiver(this.hostName, this.dataPort, dataConnection);
+                dr = new DataReceiver(this.hostName, this.dataPort, dataConnection, dataConnMap,
+                        synchronous, dataCounter, topicMap);
                 Thread dataServerReceiver = new Thread(dr);
                 dataServerReceiver.start();
             }
         });
         dataServerListener.start();
 
-
         try {
-            Thread.sleep(8000);
+            Thread.sleep(5000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -119,7 +120,7 @@ public class LeaderBasedBroker {
         serverListener.start();
 
         try {
-            Thread.sleep(8000);
+            Thread.sleep(5000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -195,7 +196,7 @@ public class LeaderBasedBroker {
                             System.out.println("!!!!!!!!! receiving data from producer...");
                             synchronized (this) {
                                 //save data to my topic map:
-                                Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, ByteString.copyFrom(buffer), topicMap, messageCounter, offsetInMem));
+                                Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, ByteString.copyFrom(buffer), topicMap, messageCounter));
                                 th.start();
                                 try {
                                     th.join();
@@ -205,33 +206,42 @@ public class LeaderBasedBroker {
 
                                 //replications:
                                 if(!synchronous) { //replication with Asynchronous followers
-                                    AsynchronousReplication asynchronousReplication = new AsynchronousReplication(membershipTable, buffer, brokerID, dataConnMap);//use data connections
+                                    asynchronousReplication = new AsynchronousReplication(membershipTable, buffer, brokerID, dataConnMap);//use data connections
                                  //   replication.run();
                                     Thread rep = new Thread(asynchronousReplication);
                                     rep.start();
+                                    //send producer a big ack for next data
+                                    System.out.println("sending big ack to producer WITHOUT CONFIRMING all followers get the data");
+                                    Acknowledgment.ack ackToProducer = Acknowledgment.ack.newBuilder()
+                                            .setSenderType("leadBrokerACK")
+                                            .build();
+                                    connWithProducer.send(ackToProducer.toByteArray());
                                 }else{ //replication with Synchronous followers
                                     //need to send ack
-                                    SynchronousReplication synchronousReplication = new SynchronousReplication(membershipTable, buffer, brokerID, dataConnMap);//use data connections
+                                    synchronousReplication = new SynchronousReplication(membershipTable, buffer, brokerID, dataConnMap);//use data connections
                                     //   replication.run();
                                     Thread rep = new Thread(synchronousReplication);
                                     rep.start();
                                     try { // to get tha ack count
-                                        Thread.sleep(100);
+                                        Thread.sleep(30);
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }
-
-
-                                    System.out.println("aCK COUNT:" + DataReceiver.ackCount + " num needed: " + synchronousReplication.numOfAckNeeded);
-                                    if(DataReceiver.ackCount == synchronousReplication.numOfAckNeeded.intValue()){//all followers get replica
+                                    System.out.println("RECEIVED ACK COUNT:" + DataReceiver.ackCount + " COLLECTING ACK COUNT: " + synchronousReplication.numOfAckNeeded);
+                                    if(DataReceiver.ackCount.intValue() == synchronousReplication.numOfAckNeeded.intValue()){//all followers get replica
                                         //send producer a big ack for next data
-                                        System.out.println("sending big ack to producer");
+                                        System.out.println("sending big ack to producer WITH CONFIRMING all followers get the data");
                                         Acknowledgment.ack ackToProducer = Acknowledgment.ack.newBuilder()
-                                                .setSenderType("leadBroker")
+                                                .setSenderType("leadBrokerACK")
+                                                .build();
+                                        connWithProducer.send(ackToProducer.toByteArray());
+                                    }else{
+                                        Acknowledgment.ack ackToProducer = Acknowledgment.ack.newBuilder()
+                                                .setSenderType("leadBrokerNOACK")
                                                 .build();
                                         connWithProducer.send(ackToProducer.toByteArray());
                                     }
-
+                                    DataReceiver.ackCount.getAndSet(0); //important!! reset to 0
                                 }
                             }
                             counter++;
@@ -353,108 +363,6 @@ public class LeaderBasedBroker {
         }
     }
 
-
-
-    /**
-     * inner class Receiver
-     */
-    static class DataReceiver implements Runnable {
-        private String name;
-        private int port;
-        private Connection conn;
-        boolean receiving = true;
-        int counter = 0;
-        private String type;
-        int brokerID;
-        int peerID;
-        static volatile int ackCount = 0;
-
-        public DataReceiver(String name, int port, Connection conn) {
-            this.name = name;
-            this.port = port;
-            this.conn = conn;
-            brokerID = Utilities.getBrokerIDFromFile(name, String.valueOf(port), "files/brokerConfig.json");
-        }
-
-
-
-        @Override
-        public void run() {
-            PeerInfo.Peer p = null;
-            Acknowledgment.ack m = null;
-            while (receiving) {
-                byte[] buffer = conn.receive();
-                if (buffer == null || buffer.length == 0) {
-                }
-                else { // buffer not null
-                    if (counter == 0) { // first msg is peerinfo
-                        try {
-                            p = PeerInfo.Peer.parseFrom(buffer);
-                        } catch (InvalidProtocolBufferException e) {
-                            e.printStackTrace();
-                        }
-
-                        type = p.getType(); // consumer or producer
-                        System.out.println("\n *** New Connection coming in ***");
-                        System.out.println("Peer type: " + type);
-                        peerHostName = p.getHostName();
-                        peerPort = p.getPortNumber();
-                        peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
-                     //   System.out.println("~~~~~~~    " + peerHostName + ":" + peerPort + " " + peerID );
-                        if (type.equals("broker")) { // other brokers
-                            System.out.println("this broker on data port has connected to BROKER " + peerHostName + ":" + peerPort + "\n");
-                            counter++;
-                        }
-
-                    } else { // when receiving leader data
-                        if (type.equals("broker")) { //leader sending data copy
-                          //  System.out.println( brokerID + " received replica from lead broker ");
-//                            try {
-//                                f = MessageInfo.Message.parseFrom(buffer);
-//                            } catch (InvalidProtocolBufferException e) {
-//                                e.printStackTrace();
-//                            }
-
-                            try{
-                                m = Acknowledgment.ack.parseFrom(buffer);
-                            } catch (InvalidProtocolBufferException e) {
-                                e.printStackTrace();
-                            }
-                            if ( m != null) {
-                                if(m.getSenderType().equals("data")){
-                                    System.out.println(">>> Follower " + brokerID + " received data replication !!!");
-
-                                    //send ack back to leader:
-                                    Acknowledgment.ack ack = Acknowledgment.ack.newBuilder()
-                                            .setSenderType("ack").build();
-
-                                    dataConnMap.get(1).send(ack.toByteArray());
-                                    System.out.println(">>> sent ack back to the lead broker!!!!!!");
-
-                                    //store data
-                                    ByteString dataInBytes = m.getData();
-                                    Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, dataInBytes, topicMap, dataCounter, offsetInMem));
-                                    th.start();
-                                    try {
-                                        th.join();
-                                    } catch (InterruptedException e) {
-                                        e.printStackTrace();
-                                    }
-
-                                } else if(m.getSenderType().equals("ack")){ //only lead broker will receive ack
-                                    System.out.println("~~~~~~~~~AN ACK received ");
-                                    ackCount++;
-                                }
-
-                                dataCounter++;
-                                counter++;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 
 
     /**
@@ -595,7 +503,7 @@ public class LeaderBasedBroker {
                 peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
                 dataConnection = new Connection(peerHostName, peerPort, isAlive);
                 dataConnMap.put(brokerCounter, dataConnection); // add connection to map, {5:conn5, 4:conn4, 3:conn3}
-                try { // CHECK ACK
+                try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();

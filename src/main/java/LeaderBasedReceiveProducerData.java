@@ -15,14 +15,14 @@ public class LeaderBasedReceiveProducerData implements Runnable{
     private Map<String, CopyOnWriteArrayList<ByteString>> topicMap;// <topic1: topic1_list, topic2: topic2_list>
     private String outputPath = "files/idMapOffset";
     private int messageCounter;
-    private int offsetInMem;
 
-    public LeaderBasedReceiveProducerData(Connection connection, ByteString recordBytes, Map<String, CopyOnWriteArrayList<ByteString>> topicMap, int messageCounter, int offsetInMem) {
+
+    public LeaderBasedReceiveProducerData(Connection connection, ByteString recordBytes, Map<String, CopyOnWriteArrayList<ByteString>> topicMap, int messageCounter) {
         this.connection = connection;
         this.recordBytes = recordBytes;
         this.topicMap = topicMap;
         this.messageCounter = messageCounter;
-        this.offsetInMem = offsetInMem;
+
     }
 
     @Override

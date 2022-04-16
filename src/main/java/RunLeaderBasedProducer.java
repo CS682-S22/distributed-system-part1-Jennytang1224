@@ -3,6 +3,7 @@ import com.google.protobuf.CodedInputStream;
 import dsd.pubsub.protos.MessageInfo;
 import dsd.pubsub.protos.PeerInfo;
 
+import javax.swing.plaf.synth.SynthOptionPaneUI;
 import java.io.*;
 import java.net.Socket;
 import java.util.regex.Matcher;
@@ -95,12 +96,13 @@ public class RunLeaderBasedProducer {
                             count++;
                         }
 
-                        try { // CHECK ACK
-                            Thread.sleep(300);
+                        try { // CHECK ACK within timeout
+                            Thread.sleep(100); // drop this num will cause not receiving ack on time
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                         receivedAck = leaderBasedProducerToBroker.getAckStatus();
+                        System.out.println("received ack: " + receivedAck);
 
                         if (!receivedAck) {
                             System.out.println("DID NOT RECEIVE ACK FROM LEAD BROKER...");

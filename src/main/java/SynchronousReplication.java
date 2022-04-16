@@ -24,7 +24,7 @@ public class SynchronousReplication implements Runnable{
         this.brokerID = brokerID;
         this.dataConnMap = dataConnMap;
         //executor = Executors.newSingleThreadExecutor();
-        executor = Executors.newFixedThreadPool(10);
+        //executor = Executors.newFixedThreadPool(10);
         numOfAckNeeded = new AtomicInteger(0);
     }
 
@@ -33,7 +33,6 @@ public class SynchronousReplication implements Runnable{
 
     @Override
     public void run() {
-
             for (int id : membershipTable.getKeys()) {
                 if (membershipTable.getMemberInfo(id).isAlive && id != brokerID) {
                     //draft data

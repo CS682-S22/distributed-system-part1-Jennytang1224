@@ -40,7 +40,6 @@ public class LeaderBasedConsumer {
         this.socket = null;
         this.bq = new CS601BlockingQueue<>(100);
 
-
         try {
             this.socket = new Socket(this.brokerHostName, this.brokerPort);
             this.connection = new Connection(this.socket);
@@ -143,20 +142,7 @@ public class LeaderBasedConsumer {
         @Override
         public void run() {
             Acknowledgment.ack response = null;
-            Runnable add = () -> {
-                byte[] result = conn.receive();
-                if (result != null) {
-                    try {
-                        this.bq.put(Acknowledgment.ack.parseFrom(result));
-                        positionCounter++;
-                        System.out.println("Consumer added a record to the blocking queue...");
-                    } catch (InvalidProtocolBufferException e) {
-                        e.printStackTrace();
-                    }
-                }
-                else{
-                }
-            };
+
 
             while (receiving) {
                 byte[] buffer = conn.receive();
@@ -174,8 +160,22 @@ public class LeaderBasedConsumer {
                         System.out.println("received lead broker location from LB: " + leadBrokerLocation);
 
                     } else if (response.getSenderType().equals("leadBroker")) { // ack on data
+                        Runnable add = () -> {
+                          //  byte[] result = conn.receive();
+                            if (buffer != null) {
+                                try {
+                                    this.bq.put(Acknowledgment.ack.parseFrom(buffer));
+                                    positionCounter++;
+                                    System.out.println("Consumer added a record to the blocking queue...");
+                                } catch (InvalidProtocolBufferException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            else{
+                            }
+                        };
+
                         executor.execute(add);
-                        System.out.println("leader broker sending data to consumer...");
                     }
                 }
             }

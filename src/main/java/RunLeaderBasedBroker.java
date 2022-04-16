@@ -3,6 +3,7 @@ import java.util.List;
 
 public class RunLeaderBasedBroker {
     public static void main(String[] args) {
+        boolean synchronous = Boolean.parseBoolean(args[0]);
         List<Object> maps = Utilities.readBrokerConfig("files/brokerConfig.json");
         IPMap ipMap = (IPMap) maps.get(0);
         PortMap portMap = (PortMap) maps.get(1);
@@ -16,7 +17,7 @@ public class RunLeaderBasedBroker {
         int brokerPort = 1431;
         int brokerDataPort = 1441;
 
-        LeaderBasedBroker broker = new LeaderBasedBroker(brokerHostName, brokerPort, brokerDataPort);
+        LeaderBasedBroker broker = new LeaderBasedBroker(brokerHostName, brokerPort, brokerDataPort, synchronous);
         try {
             broker.run();
         } catch (IOException e) {
