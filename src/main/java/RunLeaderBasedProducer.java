@@ -46,7 +46,7 @@ public class RunLeaderBasedProducer {
         boolean receivedAck = true;
         LeaderBasedProducer leaderBasedProducer = new LeaderBasedProducer(LBLocation);
         try { // every 3 sec request new data
-            Thread.sleep(1000);
+            Thread.sleep(300);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -90,7 +90,11 @@ public class RunLeaderBasedProducer {
 
                         // producer send record to broker
                         leaderBasedProducerToBroker.send(record.toByteArray());
-
+                        try { // CHECK ACK
+                            Thread.sleep(300);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                         receivedAck = leaderBasedProducerToBroker.getAckStatus();
                         if(!receivedAck) {
                             System.out.println("DID NOT RECEIVE ACK FROM LEAD BROKER...");

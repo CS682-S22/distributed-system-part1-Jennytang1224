@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.*;
 
+import javax.xml.crypto.dom.DOMCryptoContext;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -46,7 +47,8 @@ public class LeaderBasedBroker {
     static HashMap<Integer, Connection> dataConnMap = new HashMap<>();
     static int dataCounter = 0;
     static boolean synchronous = true;
-    static int ackCount = 0;
+    static volatile int ackCount = 0;
+    static Connection connWithProducer;
 
 
 
@@ -168,7 +170,9 @@ public class LeaderBasedBroker {
                         if (type.equals("producer")) { // hear from producer only bc this broker is a leader
                             System.out.println("this Broker now has connected to PRODUCER: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
+                            connWithProducer = conn;
                         }
+
                         else if (type.equals("broker")) { // hear from other brokers: heartbeat/election
                             System.out.println("this broker NOW has connected to BROKER: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
@@ -205,12 +209,19 @@ public class LeaderBasedBroker {
                                     //   replication.run();
                                     Thread rep = new Thread(synchronousReplication);
                                     rep.start();
+                                    try { // to get tha ack count
+                                        Thread.sleep(100);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                    System.out.println("aCK COUNT:" + ackCount + " num needed: " + synchronousReplication.numOfAckNeeded);
                                     if(ackCount == synchronousReplication.numOfAckNeeded){//all followers get replica
                                         //send producer a big ack for next data
+                                        System.out.println("sending big ack to producer");
                                         Acknowledgment.ack ackToProducer = Acknowledgment.ack.newBuilder()
                                                 .setSenderType("leadBroker")
                                                 .build();
-                                        conn.send(ackToProducer.toByteArray());
+                                        connWithProducer.send(ackToProducer.toByteArray());
                                     }
 
                                 }
@@ -406,7 +417,7 @@ public class LeaderBasedBroker {
                                     Acknowledgment.ack ack = Acknowledgment.ack.newBuilder()
                                             .setSenderType("ack").build();
 
-                                    conn.send(ack.toByteArray());
+                                    dataConnMap.get(1).send(ack.toByteArray());
                                     System.out.println(">>> sent ack back to the lead broker!!!!!!");
 
                                     //store data
@@ -451,13 +462,10 @@ public class LeaderBasedBroker {
         boolean isLB = false;
         int currentLeader;
 
-
-
         public HeatBeatConnector(String hostName, int port) {
             this.hostName = hostName;
             this.port = port;
             this.brokerID = Utilities.getBrokerIDFromFile(hostName, String.valueOf(port), "files/brokerConfig.json");
-
         }
 
         @Override
@@ -522,7 +530,7 @@ public class LeaderBasedBroker {
                   //  System.out.println("sent peer info to broker " + peerID + "...\n");
 
                     try {
-                        Thread.sleep(3000);
+                        Thread.sleep(1000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -576,7 +584,11 @@ public class LeaderBasedBroker {
                 peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
                 dataConnection = new Connection(peerHostName, peerPort, isAlive);
                 dataConnMap.put(brokerCounter, dataConnection); // add connection to map, {5:conn5, 4:conn4, 3:conn3}
-
+                try { // CHECK ACK
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 // send peer info to other brokers
                 String type = "broker";
                 PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
