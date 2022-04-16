@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SynchronousReplication implements Runnable{
     MembershipTable membershipTable;
@@ -14,7 +15,8 @@ public class SynchronousReplication implements Runnable{
     int brokerID;
     HashMap<Integer, Connection> dataConnMap;
     private static ExecutorService executor;
-    volatile int numOfAckNeeded = 0;
+    AtomicInteger numOfAckNeeded;
+
 
     public SynchronousReplication(MembershipTable membershipTable, byte[] buffer, int brokerID, HashMap<Integer, Connection> dataConnMap) {
         this.membershipTable = membershipTable;
@@ -23,6 +25,7 @@ public class SynchronousReplication implements Runnable{
         this.dataConnMap = dataConnMap;
         //executor = Executors.newSingleThreadExecutor();
         executor = Executors.newFixedThreadPool(10);
+        numOfAckNeeded = new AtomicInteger(0);
     }
 
 
@@ -42,7 +45,7 @@ public class SynchronousReplication implements Runnable{
                             .setSenderType("data")
                             .setData(ByteString.copyFrom(buffer))
                             .build();
-                    numOfAckNeeded++;
+                    numOfAckNeeded.getAndIncrement();
                     (dataConnMap.get(id)).send(record.toByteArray()); // send data message
                     System.out.println("this lead broker sent sync replication of data to follower " + id);
                 }

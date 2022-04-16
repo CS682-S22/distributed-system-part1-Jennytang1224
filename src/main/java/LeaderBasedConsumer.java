@@ -1,4 +1,5 @@
 import com.google.protobuf.InvalidProtocolBufferException;
+import dsd.pubsub.protos.Acknowledgment;
 import dsd.pubsub.protos.MessageInfo;
 import dsd.pubsub.protos.PeerInfo;
 
@@ -26,7 +27,8 @@ public class LeaderBasedConsumer {
     static String peerHostName;
     static int receiverCounter = 0;
     Receiver newReceiver;
-    public CS601BlockingQueue<MessageInfo.Message> bq;
+    public CS601BlockingQueue<Acknowledgment.ack> bq;
+    static String leadBrokerLocation;
 
 
     public LeaderBasedConsumer(String brokerLocation, String topic, int startingPosition) {
@@ -73,7 +75,7 @@ public class LeaderBasedConsumer {
     }
 
     public byte[] poll(int timeout){
-        CS601BlockingQueue<MessageInfo.Message> bq = newReceiver.getBq();
+        CS601BlockingQueue<Acknowledgment.ack> bq = newReceiver.getBq();
         byte[] m = bq.poll(timeout).toByteArray();
         return m;
     }
@@ -97,10 +99,13 @@ public class LeaderBasedConsumer {
         return newReceiver.getPositionCounter();
     }
 
-    public CS601BlockingQueue<MessageInfo.Message> getBq(){
+    public CS601BlockingQueue<Acknowledgment.ack> getBq(){
         return newReceiver.getBq();
     }
 
+    public String getLeadBrokerLocation(){
+        return leadBrokerLocation;
+    }
 
     /**
      * inner class Receiver
@@ -112,11 +117,11 @@ public class LeaderBasedConsumer {
         boolean receiving = true;
         private ExecutorService executor;
         int positionCounter;
-        CS601BlockingQueue<MessageInfo.Message> bq;
+        CS601BlockingQueue<Acknowledgment.ack> bq;
         int startingPosition;
         String topic;
 
-        public Receiver(String name, int port, Connection conn, CS601BlockingQueue<MessageInfo.Message> bq, String topic, int startingPosition) {
+        public Receiver(String name, int port, Connection conn, CS601BlockingQueue<Acknowledgment.ack> bq, String topic, int startingPosition) {
             this.name = name;
             this.port = port;
             this.conn = conn;
@@ -131,19 +136,18 @@ public class LeaderBasedConsumer {
             return positionCounter;
         }
 
-        public CS601BlockingQueue<MessageInfo.Message> getBq(){
+        public CS601BlockingQueue<Acknowledgment.ack> getBq(){
             return this.bq;
         }
 
-
         @Override
         public void run() {
-            MessageInfo.Message m = null;
+            Acknowledgment.ack response = null;
             Runnable add = () -> {
                 byte[] result = conn.receive();
                 if (result != null) {
                     try {
-                        this.bq.put(MessageInfo.Message.parseFrom(result));
+                        this.bq.put(Acknowledgment.ack.parseFrom(result));
                         positionCounter++;
                         System.out.println("Consumer added a record to the blocking queue...");
                     } catch (InvalidProtocolBufferException e) {
@@ -151,12 +155,29 @@ public class LeaderBasedConsumer {
                     }
                 }
                 else{
-//                    System.out.println("received result is null");
                 }
             };
 
-            while(receiving) {
-                executor.execute(add);
+            while (receiving) {
+                byte[] buffer = conn.receive();
+                if (buffer == null || buffer.length == 0) {
+                    // System.out.println("nothing received/ finished receiving");
+                }
+                else {// Receive from LB
+                    try {
+                        response = Acknowledgment.ack.parseFrom(buffer);
+                    } catch (InvalidProtocolBufferException e) {
+                        e.printStackTrace();
+                    }
+                    if (response.getSenderType().equals("loadBalancer")) {//broker location
+                        leadBrokerLocation = response.getLeadBrokerLocation();
+                        System.out.println("received lead broker location from LB: " + leadBrokerLocation);
+
+                    } else if (response.getSenderType().equals("leadBroker")) { // ack on data
+                        executor.execute(add);
+                        System.out.println("leader broker sending data to consumer...");
+                    }
+                }
             }
         }
     }

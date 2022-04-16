@@ -1,3 +1,4 @@
+import dsd.pubsub.protos.Acknowledgment;
 import dsd.pubsub.protos.MessageInfo;
 import java.io.*;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -22,21 +23,21 @@ public class RunLeaderBasedApplication implements Runnable {
         while(true){
             String fileOutput = consumer.getOutputPath();
             byte[] m = null;
-            MessageInfo.Message d = null;
+            Acknowledgment.ack d = null;
 
            //  application polls from bq
             try {
-                m = consumer.poll(30);
+                m = consumer.poll(300);
             } catch (NullPointerException e){
             }
             if (m != null) { // received within timeout
                 //save to file
                 try {
-                    d = MessageInfo.Message.parseFrom(m);
+                    d = Acknowledgment.ack.parseFrom(m);
                 } catch (InvalidProtocolBufferException e) {
                     e.printStackTrace();
                 }
-                byte[] arr = d.getValue().toByteArray();
+                byte[] arr = d.getData().toByteArray();
 
                 try {
                     Utilities.writeBytesToFile(fileOutput, arr);

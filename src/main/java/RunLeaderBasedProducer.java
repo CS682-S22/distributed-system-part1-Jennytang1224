@@ -43,10 +43,10 @@ public class RunLeaderBasedProducer {
 
 
 
-        boolean receivedAck = true;
+        boolean receivedAck;
         LeaderBasedProducer leaderBasedProducer = new LeaderBasedProducer(LBLocation);
         try { // every 3 sec request new data
-            Thread.sleep(300);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -61,6 +61,7 @@ public class RunLeaderBasedProducer {
         String key;
         int partition = 0;
         int offset;
+        int count = 0;
         try{
             FileInputStream fstream = new FileInputStream(filepath);
             BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
@@ -89,24 +90,30 @@ public class RunLeaderBasedProducer {
                                 .build();
 
                         // producer send record to broker
-                        leaderBasedProducerToBroker.send(record.toByteArray());
+                        if(count == 0) { //send initial message regardless
+                            leaderBasedProducerToBroker.send(record.toByteArray());
+                            count++;
+                        }
+
                         try { // CHECK ACK
                             Thread.sleep(300);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                         receivedAck = leaderBasedProducerToBroker.getAckStatus();
-                        if(!receivedAck) {
+
+                        if (!receivedAck) {
                             System.out.println("DID NOT RECEIVE ACK FROM LEAD BROKER...");
                             break;
-                        }else {
+                        } else {
                             leaderBasedProducerToBroker.send(record.toByteArray());
-                            System.out.println("message has been send!");
+                            System.out.println("An ACK received and a message has been send!");
                         }
                     }
+
+
                 }
-                //reset receivedAck to false everytime
-                receivedAck = false;
+
 
             }
             fstream.close();

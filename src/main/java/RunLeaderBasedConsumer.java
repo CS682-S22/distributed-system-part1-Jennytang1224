@@ -23,16 +23,27 @@ public class RunLeaderBasedConsumer {
         String topic = args[1];
         int startingPosition = Integer.parseInt(args[2]);
 
-        LeaderBasedConsumer consumer = new LeaderBasedConsumer(LBLocation, topic, startingPosition);
+        // get leader location
+        LeaderBasedConsumer leaderBasedConsumer = new LeaderBasedConsumer(LBLocation, topic, startingPosition);
+        try {
+            Thread.sleep(300);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        //send request directly to broker
+        String leadBrokerLocation = leaderBasedConsumer.getLeadBrokerLocation();
+        LeaderBasedConsumer leaderBasedConsumerToBroker = new LeaderBasedConsumer(leadBrokerLocation, topic, startingPosition);
+
+
         //running application thread for pulling
-        RunLeaderBasedApplication app = new RunLeaderBasedApplication(LBLocation, topic, startingPosition, consumer);
+        RunLeaderBasedApplication app = new RunLeaderBasedApplication(LBLocation, topic, startingPosition, leaderBasedConsumerToBroker);
         Thread runApp = new Thread(app);
         runApp.start();
 
         int trackSize = -1;
         int lastSize = 0;
         while(true) {
-            int sizeSavedToBq = consumer.getPositionCounter();
+            int sizeSavedToBq = leaderBasedConsumerToBroker.getPositionCounter();
             if(sizeSavedToBq != trackSize) {
                 startingPosition += sizeSavedToBq;
                 startingPosition -= lastSize;
@@ -41,7 +52,7 @@ public class RunLeaderBasedConsumer {
             else{
                 startingPosition += 0;
             }
-            consumer.subscribe(topic, startingPosition);
+            leaderBasedConsumerToBroker.subscribe(topic, startingPosition);
 
             try { // every 3 sec request new data
                 Thread.sleep(3000);

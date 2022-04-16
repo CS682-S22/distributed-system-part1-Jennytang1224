@@ -134,35 +134,20 @@ public class LeaderBasedLoadBalancer {
                             conn.send(response.toByteArray());
                             System.out.println("LB sends leadBrokerLocation to producer: " + leadBrokerLocation);
 
-
-//                            String peerHostName = Utilities.getHostnameByID(currentLeadBroker);
-//                            int peerPort = Utilities.getPortByID(currentLeadBroker);
-//                            connWithLeadBrokerProd = new Connection(peerHostName, peerPort, true);
-
-//                            String type = "producer";
-//                            PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
-//                                    .setType(type)
-//                                    .setHostName(name)
-//                                    .setPortNumber(port)
-//                                    .build();
-//                            connWithLeadBrokerProd.send(peerInfo.toByteArray());
-
                         } else if (type.equals("consumer")) {
                             System.out.println("Load Balancer NOW has connected to consumer: " + peerHostName + " port: " + peerPort + "\n");
                             connWithConsumer = conn;//save the connection with consumer for sending data back later
                             counter++;
-                            String peerHostName = Utilities.getHostnameByID(currentLeadBroker);
-                            int peerPort = Utilities.getPortByID(currentLeadBroker);
-                            connWithLeadBrokerCons = new Connection(peerHostName, peerPort, true); // creating a new connection with lead broker
-
-                            System.out.println("sending consumer peer info to lead broker ");
-                            String type = "consumer";
-                            PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
-                                    .setType(type)
-                                    .setHostName(name)
-                                    .setPortNumber(port)
+                            //send consumer broker location
+                            String leadBrokerName = membershipTable.getMemberInfo(currentLeadBroker).getHostName();
+                            String leadBrokerPort = String.valueOf(membershipTable.getMemberInfo(currentLeadBroker).getPort());
+                            String leadBrokerLocation = leadBrokerName + ":" + leadBrokerPort;
+                            Acknowledgment.ack response = Acknowledgment.ack.newBuilder()
+                                    .setSenderType("loadBalancer")
+                                    .setLeadBrokerLocation(leadBrokerLocation)
                                     .build();
-                            connWithLeadBrokerCons.send(peerInfo.toByteArray());
+                            conn.send(response.toByteArray());
+                            System.out.println("LB sends leadBrokerLocation to consumer: " + leadBrokerLocation);
 
                         } else if (type.equals("broker")) {
                             System.out.println("Load Balancer NOW has connected to load balancer: " + peerHostName + " port: " + peerPort + "\n");
@@ -172,21 +157,21 @@ public class LeaderBasedLoadBalancer {
                     } else { // when receiving data
                         if (type.equals("producer")) {
                             //send data to lead broker
-
-                            Thread th = new Thread(new LeaderBasedReceiveProducerMessage(buffer, messageCounter, counterMap, connWithLeadBrokerProd, currentLeadBroker));
-                            th.start();
-                            try {
-                                th.join();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-
-                            counter++;
-                            messageCounter++;
+//
+//                            Thread th = new Thread(new LeaderBasedReceiveProducerMessage(buffer, messageCounter, counterMap, connWithLeadBrokerProd, currentLeadBroker));
+//                            th.start();
+//                            try {
+//                                th.join();
+//                            } catch (InterruptedException e) {
+//                                e.printStackTrace();
+//                            }
+//
+//                            counter++;
+//                            messageCounter++;
                         } else if (type.equals("consumer")) {
-                            System.out.println("forward request to lead broker...");
-                            connWithLeadBrokerCons.send(buffer);
-                            counter++;
+//                            System.out.println("forward request to lead broker...");
+//                            connWithLeadBrokerCons.send(buffer);
+//                            counter++;
 
                         } else if (type.equals("broker")) { //load Balancer hear from leader broker
                             // update membership table
@@ -213,13 +198,14 @@ public class LeaderBasedLoadBalancer {
                                     membershipTable.getMemberInfo(peerID).setAlive(b.getIsAlive());
                                     membershipTable.getMemberInfo(peerID).setLeader(b.getIsLeader());
                                     logistic();
-                                } else if (type.equals("data")) { // reply consumer request with data
-                                    // send data to consumer
-                                    byte[] record = b.getData().toByteArray();
-                                    connWithConsumer.send(record);
-                                    System.out.println("LB sends a record to Consumer");
-                                    counter++;
                                 }
+//                                else if (type.equals("data")) { // reply consumer request with data
+//                                    // send data to consumer
+//                                    byte[] record = b.getData().toByteArray();
+//                                    connWithConsumer.send(record);
+//                                    System.out.println("LB sends a record to Consumer");
+//                                    counter++;
+//                                }
 
                             }
                         }

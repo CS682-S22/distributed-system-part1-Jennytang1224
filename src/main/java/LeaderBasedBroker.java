@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.*;
 
+import javax.xml.crypto.Data;
 import javax.xml.crypto.dom.DOMCryptoContext;
 import java.io.*;
 import java.net.ServerSocket;
@@ -25,8 +26,8 @@ public class LeaderBasedBroker {
     private DataInputStream input;
     private DataOutputStream output;
     private static volatile boolean running = true;
-    static CopyOnWriteArrayList<byte[]> topicList;
-    static Map<String, CopyOnWriteArrayList> topicMap;// <topic1: topic1_list, topic2: topic2_list>
+    static CopyOnWriteArrayList<ByteString> topicList;
+    static Map<String, CopyOnWriteArrayList<ByteString>> topicMap;// <topic1: topic1_list, topic2: topic2_list>
     static Server server;
     private Connection connection;
     static String peerHostName;
@@ -47,8 +48,10 @@ public class LeaderBasedBroker {
     static HashMap<Integer, Connection> dataConnMap = new HashMap<>();
     static int dataCounter = 0;
     static boolean synchronous = true;
-    static volatile int ackCount = 0;
+
     static Connection connWithProducer;
+    static Connection connWithConsumer;
+    static DataReceiver dr;
 
 
 
@@ -80,7 +83,8 @@ public class LeaderBasedBroker {
             }
             while (running) {
                 Connection dataConnection = this.dataServer.nextConnection(); // calls accept on server socket to block
-                Thread dataServerReceiver = new Thread(new DataReceiver(this.hostName, this.dataPort, dataConnection));
+                dr = new DataReceiver(this.hostName, this.dataPort, dataConnection);
+                Thread dataServerReceiver = new Thread(dr);
                 dataServerReceiver.start();
             }
         });
@@ -139,6 +143,7 @@ public class LeaderBasedBroker {
         int brokerID;
         int peerID;
 
+
         public Receiver(String name, int port, Connection conn) {
             this.name = name;
             this.port = port;
@@ -178,8 +183,9 @@ public class LeaderBasedBroker {
                             counter++;
                         }
                         else if (type.equals("consumer")) { // hear from producer/LB only bc this broker is a leader
-                            System.out.println("this Broker now has connected to LB(consumer): " + peerHostName + " port: " + peerPort + "\n");
+                            System.out.println("this Broker now has connected to CONSUMER: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
+                            connWithConsumer = conn;
                         }
 
                     }
@@ -214,8 +220,10 @@ public class LeaderBasedBroker {
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }
-                                    System.out.println("aCK COUNT:" + ackCount + " num needed: " + synchronousReplication.numOfAckNeeded);
-                                    if(ackCount == synchronousReplication.numOfAckNeeded){//all followers get replica
+
+
+                                    System.out.println("aCK COUNT:" + DataReceiver.ackCount + " num needed: " + synchronousReplication.numOfAckNeeded);
+                                    if(DataReceiver.ackCount == synchronousReplication.numOfAckNeeded.intValue()){//all followers get replica
                                         //send producer a big ack for next data
                                         System.out.println("sending big ack to producer");
                                         Acknowledgment.ack ackToProducer = Acknowledgment.ack.newBuilder()
@@ -231,8 +239,8 @@ public class LeaderBasedBroker {
                         }
 
                         else if (type.equals("consumer")){
-                            System.out.println("receiving consumer request from LB...");
-                            Thread th = new Thread(new LeaderBasedSendConsumerData(connMap.get(0), buffer, topicMap));
+                            System.out.println("receiving consumer request...");
+                            Thread th = new Thread(new LeaderBasedSendConsumerData(connWithConsumer, buffer, topicMap));
                             th.start();
                             try {
                                 th.join();
@@ -359,6 +367,7 @@ public class LeaderBasedBroker {
         private String type;
         int brokerID;
         int peerID;
+        static volatile int ackCount = 0;
 
         public DataReceiver(String name, int port, Connection conn) {
             this.name = name;
@@ -367,10 +376,12 @@ public class LeaderBasedBroker {
             brokerID = Utilities.getBrokerIDFromFile(name, String.valueOf(port), "files/brokerConfig.json");
         }
 
+
+
         @Override
         public void run() {
             PeerInfo.Peer p = null;
-            MessageInfo.Message f = null;
+            Acknowledgment.ack m = null;
             while (receiving) {
                 byte[] buffer = conn.receive();
                 if (buffer == null || buffer.length == 0) {
@@ -403,7 +414,7 @@ public class LeaderBasedBroker {
 //                            } catch (InvalidProtocolBufferException e) {
 //                                e.printStackTrace();
 //                            }
-                            Acknowledgment.ack m = null;
+
                             try{
                                 m = Acknowledgment.ack.parseFrom(buffer);
                             } catch (InvalidProtocolBufferException e) {

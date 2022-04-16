@@ -10,14 +10,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 // receive data and store them in topic map as {topic1: [..,..,..], topic2: [..,..,..,..,..,]}
 public class LeaderBasedReceiveProducerData implements Runnable{
-    static Connection connection;
+    Connection connection;
     ByteString recordBytes;
-    private Map<String, CopyOnWriteArrayList> topicMap;// <topic1: topic1_list, topic2: topic2_list>
+    private Map<String, CopyOnWriteArrayList<ByteString>> topicMap;// <topic1: topic1_list, topic2: topic2_list>
     private String outputPath = "files/idMapOffset";
     private int messageCounter;
     private int offsetInMem;
 
-    public LeaderBasedReceiveProducerData(Connection connection, ByteString recordBytes, Map<String, CopyOnWriteArrayList> topicMap, int messageCounter, int offsetInMem) {
+    public LeaderBasedReceiveProducerData(Connection connection, ByteString recordBytes, Map<String, CopyOnWriteArrayList<ByteString>> topicMap, int messageCounter, int offsetInMem) {
         this.connection = connection;
         this.recordBytes = recordBytes;
         this.topicMap = topicMap;
@@ -39,7 +39,7 @@ public class LeaderBasedReceiveProducerData implements Runnable{
             topicMap.get(topic).add(recordBytes);
         }
         else{ //if key is not in the map, create CopyOnWriteArrayList and add first record
-            CopyOnWriteArrayList newList = new CopyOnWriteArrayList<>();
+            CopyOnWriteArrayList<ByteString> newList = new CopyOnWriteArrayList<>();
             newList.add(recordBytes);
             topicMap.put(topic, newList);
         }
