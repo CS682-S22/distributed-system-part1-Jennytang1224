@@ -85,7 +85,7 @@ public class LeaderBasedBroker {
             while (running) {
                 Connection dataConnection = this.dataServer.nextConnection(); // calls accept on server socket to block
                 dr = new DataReceiver(this.hostName, this.dataPort, dataConnection, dataConnMap,
-                        synchronous, dataCounter, topicMap);
+                        synchronous, dataCounter, topicMap, membershipTable);
                 Thread dataServerReceiver = new Thread(dr);
                 dataServerReceiver.start();
             }
@@ -93,7 +93,7 @@ public class LeaderBasedBroker {
         dataServerListener.start();
 
         try {
-            Thread.sleep(5000);
+            Thread.sleep(7000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -120,7 +120,7 @@ public class LeaderBasedBroker {
         serverListener.start();
 
         try {
-            Thread.sleep(5000);
+            Thread.sleep(7000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -182,6 +182,25 @@ public class LeaderBasedBroker {
                         else if (type.equals("broker")) { // hear from other brokers: heartbeat/election
                             System.out.println("this broker NOW has connected to BROKER: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
+
+//                            if(membershipTable.membershipTable.containsKey(peerID)){ // add new broker
+//                                boolean isLeader = false;
+//                                boolean isAlive = true;
+//                                membershipTable.getMemberInfo(peerID).setLeader(isLeader);
+//                                membershipTable.getMemberInfo(peerID).setAlive(isAlive);
+//                                System.out.println("~~~~~~~~~~~~~~~~ after broker " + peerID + " connected..");
+//                                membershipTable.print();
+//                                System.out.println(" ");
+//
+//                                // if im a leader, send membership updates to LB
+//                                if (membershipTable.membershipTable.containsKey(brokerID) && membershipTable.getMemberInfo(brokerID).isLeader) {
+//                                    Utilities.sendMembershipTableUpdates(connMap.get(0), "new", brokerID, peerID,
+//                                            peerHostName, peerPort, "", isLeader, isAlive);
+//                                    //membershipTable.print();
+//                                }
+//                            }
+
+
                         }
                         else if (type.equals("consumer")) { // hear from producer/LB only bc this broker is a leader
                             System.out.println("this Broker now has connected to CONSUMER: " + peerHostName + " port: " + peerPort + "\n");
@@ -206,7 +225,7 @@ public class LeaderBasedBroker {
 
                                 //replications:
                                 if(!synchronous) { //replication with Asynchronous followers
-                                    asynchronousReplication = new AsynchronousReplication(membershipTable, buffer, brokerID, dataConnMap);//use data connections
+                                    asynchronousReplication = new AsynchronousReplication(membershipTable, buffer, brokerID, dataConnMap, -1, topicMap);//use data connections
                                  //   replication.run();
                                     Thread rep = new Thread(asynchronousReplication);
                                     rep.start();
@@ -351,7 +370,7 @@ public class LeaderBasedBroker {
                                                 .setSenderID(brokerID).setWinnerID(-1).build();
                                         conn.send(electionResponse.toByteArray());
                                         inElection = true;
-                                        System.out.println(" -> > >broker " + brokerID + " reply to broker " + senderId + " election msg...");
+                                        System.out.println(" -> > > broker " + brokerID + " reply to broker " + senderId + " election msg...");
                                     }
                                 }
                             }
@@ -474,7 +493,7 @@ public class LeaderBasedBroker {
 
 
     /**
-     * inner class Connector for all brokers
+     * inner class Connector for all brokers on replication
      */
     static class ReplicationConnector implements Runnable {
         int brokerCounter = 1; // 0 is LB
@@ -502,6 +521,7 @@ public class LeaderBasedBroker {
                 int peerPort = Utilities.getPortRepByID(brokerCounter);
                 peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
                 dataConnection = new Connection(peerHostName, peerPort, isAlive);
+                System.out.println("made data connection with peer: " + peerHostName + ":" + peerPort);
                 dataConnMap.put(brokerCounter, dataConnection); // add connection to map, {5:conn5, 4:conn4, 3:conn3}
                 try {
                     Thread.sleep(1000);
@@ -517,11 +537,24 @@ public class LeaderBasedBroker {
                         .build();
 
                 dataConnection.send(peerInfo.toByteArray());
-                System.out.println("sent peer info to broker " + peerID + "  " + peerHostName + ":" + peerPort + "...\n");
-
+                System.out.println("sent peer info to broker " + peerID + "  " + peerHostName + ":" + peerPort + "...");
                 brokerCounter++;  // next broker in the map
 
             }
+            //get all data from the leader:
+            try { // every 3 sec request new data
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            Acknowledgment.ack requestData = Acknowledgment.ack.newBuilder()
+                    .setSenderType("catchup")
+                    .setLeadBrokerLocation(String.valueOf(brokerID)) // my broker id
+                    .build();
+            dataConnMap.get(membershipTable.getLeaderID()).send(requestData.toByteArray());
+            System.out.println("############sent request to catch up all data");
+
+
         }
     }
 }

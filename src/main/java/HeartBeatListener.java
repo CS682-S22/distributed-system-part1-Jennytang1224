@@ -73,7 +73,7 @@ public class HeartBeatListener implements Runnable {
 
                 if (!inElection) {// if its heartbeat response
                     replyingBrokerId = f.getSenderID();
-                    System.out.println("receiving heartbeat msg from peer: " + replyingBrokerId);
+                    System.out.println("(receiving heartbeat msg from peer: " + replyingBrokerId + ")");
                     membershipTable.getMemberInfo(replyingBrokerId).setAlive(true);
 
                     Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
@@ -90,14 +90,14 @@ public class HeartBeatListener implements Runnable {
                     int newLeader = f.getWinnerID();
 
                     if (newLeader == -1) {// if winner is -1 ... its a simple election response, still in election
-                        System.out.println("In Election, receiving election response from the lower id broker " + senderId);
+                        System.out.println(" *** In Election, receiving election response from the lower id broker " + senderId);
                         // me can stop election Bc there's someone more qualified than me to be the leader
                         System.out.println("now waiting for election decision from other broker");
                         inElection = true;
                         sending = false;
 
                     } else { // if winner is not -1 ... we have a winner
-                        System.out.println("new leader id:" + newLeader);
+                        System.out.println("~~~~~~~~~ NEW LEADER HAS BEEN ELECTED!!! ID: " + newLeader + "~~~~~~~~");
                         // int oldLeader = membershipTable.getLeaderID();
                         int oldLeader = currentLeaderBeforeMarkDead;
                         System.out.println("old leader id:" + oldLeader);

@@ -1,8 +1,11 @@
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.Acknowledgment;
+import dsd.pubsub.protos.MessageInfo;
 import dsd.pubsub.protos.PeerInfo;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -10,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
- * inner class Receiver
+ * receiver only receives replicated data
  */
 class DataReceiver implements Runnable {
     private String name;
@@ -28,9 +31,13 @@ class DataReceiver implements Runnable {
     boolean synchronous;
     static Map<String, CopyOnWriteArrayList<ByteString>> topicMap;
     int dataCounter;
+    MembershipTable membershipTable;
+    Connection newBrokerConn;
+    boolean newBrokerDataRequest;
 
     public DataReceiver(String name, int port, Connection conn, HashMap<Integer, Connection> dataConnMap,
-                        boolean synchronous, int dataCounter, Map<String, CopyOnWriteArrayList<ByteString>> topicMap) {
+                        boolean synchronous, int dataCounter, Map<String, CopyOnWriteArrayList<ByteString>> topicMap,
+                        MembershipTable membershipTable) {
         this.name = name;
         this.port = port;
         this.conn = conn;
@@ -39,6 +46,7 @@ class DataReceiver implements Runnable {
         this.dataConnMap = dataConnMap;
         this.synchronous = synchronous;
         this.topicMap = topicMap;
+        this.membershipTable = membershipTable;
     }
 
 
@@ -72,6 +80,7 @@ class DataReceiver implements Runnable {
 
                 } else { // when receiving leader data
                     if (type.equals("broker")) { //leader sending data copy
+
                         try{
                             m = Acknowledgment.ack.parseFrom(buffer);
                         } catch (InvalidProtocolBufferException e) {
@@ -79,13 +88,14 @@ class DataReceiver implements Runnable {
                         }
                         if ( m != null) {
                             if(m.getSenderType().equals("data")){
+                                //newBrokerDataRequest = false;
                                 System.out.println(">>> Follower " + brokerID + " received data replication !!!");
                                 if(synchronous) {
                                     //send ack back to leader:
                                     Acknowledgment.ack ack = Acknowledgment.ack.newBuilder()
                                             .setSenderType("ack").build();
 
-                                    dataConnMap.get(1).send(ack.toByteArray());
+                                    dataConnMap.get(membershipTable.getLeaderID()).send(ack.toByteArray());
                                     System.out.println(">>> sent ack back to the lead broker!!!!!!");
                                 }
 
@@ -102,7 +112,59 @@ class DataReceiver implements Runnable {
                             } else if(m.getSenderType().equals("ack")){ //only lead broker will receive ack
                                 System.out.println("~~~~~~~~~AN ACK received ");
                                 ackCount.getAndIncrement();
+
                             }
+                            /* else if(m.getSenderType().equals("catchup")) { // new broker join and wants to catchup on data
+                                //send everything in topic map
+//                                for (Map.Entry<String, CopyOnWriteArrayList<ByteString>> entry : topicMap.entrySet()) {
+//                                    String topic = entry.getKey();
+//                                    CopyOnWriteArrayList<ByteString> lst = entry.getValue();
+//                                    for(int i = 0; i < lst.size(); i++) {
+//                                        ByteString msg = lst.get(i);
+//
+//                                        String key = lst.;
+//                                        MessageInfo.Message record = MessageInfo.Message.newBuilder()
+//                                                .setTopic(topic)
+//                                                .setKey(key)
+//                                                .setValue(data)
+//                                                .setPartition(partition)
+//                                                .setOffset(offset)
+//                                                .build();
+//                                        conn.send(record.toByteArray());
+//                                    }
+//                                }
+//
+
+//                                Acknowledgment.ack response = Acknowledgment.ack.newBuilder()
+//                                        .setSenderType("catchupData")
+//                                        .setData(ByteString.copyFrom(topicMap.toString().getBytes(StandardCharsets.UTF_8)))
+//                                        .build();
+//
+//                                conn.send(response.toByteArray());
+                                //newBrokerDataRequest = true;
+                                int peerId = Integer.parseInt(m.getLeadBrokerLocation());
+                                AsynchronousReplication asynchronousReplication = new AsynchronousReplication(membershipTable, buffer, brokerID, dataConnMap, peerId, topicMap);//use data connections
+                                //   replication.run();
+
+                                Thread rep = new Thread(asynchronousReplication);
+                                rep.start();
+                                System.out.println("##############leader send all catchup data to the new broker");
+                            }
+                            else if(m.getSenderType().equals("catchupData")){
+                                System.out.println("########## receive and store catchup data");
+                                //store data
+                                ByteString dataInBytes = m.getData();
+                                System.out.println(dataInBytes.toByteArray().toString());
+                               /* Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, dataInBytes, topicMap, dataCounter));
+                                th.start();
+                                try {
+                                    th.join();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            */
+
 
                             dataCounter++;
                             counter++;

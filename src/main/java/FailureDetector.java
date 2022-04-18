@@ -51,10 +51,8 @@ public class FailureDetector {
 //                            "", 0, "", membershipTable.getMemberInfo(peerID).isLeader, false);
 //                    membershipTable.print();
 //                }
-                System.out.println("check...................................");
                 membershipTable.print();
                 BullyElection bully = new BullyElection(brokerID, membershipTable, connMap, conn);
-                System.out.println("peer id!!!!!" + peerID);
                 bully.run();
                 peerCounterForElection = bully.getPeerCounter();
                 System.out.println("~~~ # of peers that me (broker " + brokerID + ") send election msg to: " + peerCounterForElection);
@@ -81,7 +79,7 @@ public class FailureDetector {
         }
 
         else{ // if expecting election msg, but nothing
-            System.out.println("if expecting election msg, but nothing");
+            System.out.println("... is expecting election msg, but nothing");
            // if(!membershipTable.getMemberInfo(peerID).isLeader) {
 
                 membershipTable.markDead(peerID); // mark the peer is dead

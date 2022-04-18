@@ -38,10 +38,11 @@ public class BullyElection {
             e.printStackTrace();
         }
         for (int peerID : connMap.keySet()) {
-            System.out.println("ID!!! " + peerID);
-           if ((membershipTable.membershipTable.containsKey(peerID)) && (membershipTable.getMemberInfo(peerID).isAlive) && (peerID < brokerId)) {
+
+            if ((membershipTable.membershipTable.containsKey(peerID)) && (membershipTable.getMemberInfo(peerID).isAlive) && (peerID < brokerId)) {
                 //get connection between this broker and the other broker
           //  if ((membershipTable.getMemberInfo(peerID).isAlive)
+                System.out.println("sent election message to " + peerID);
                 Connection conn = connMap.get(peerID);
 
                 //draft election msg
@@ -51,7 +52,6 @@ public class BullyElection {
                         .setWinnerID(winnerId).build();
                 conn.send(electionMessage.toByteArray()); // send election message
                 peerCounter++;
-                System.out.println(peerID);
             }
         }
     }
