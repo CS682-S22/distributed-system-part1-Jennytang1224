@@ -183,31 +183,12 @@ public class LeaderBasedBroker {
                             System.out.println("this broker NOW has connected to BROKER: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
 
-//                            if(membershipTable.membershipTable.containsKey(peerID)){ // add new broker
-//                                boolean isLeader = false;
-//                                boolean isAlive = true;
-//                                membershipTable.getMemberInfo(peerID).setLeader(isLeader);
-//                                membershipTable.getMemberInfo(peerID).setAlive(isAlive);
-//                                System.out.println("~~~~~~~~~~~~~~~~ after broker " + peerID + " connected..");
-//                                membershipTable.print();
-//                                System.out.println(" ");
-//
-//                                // if im a leader, send membership updates to LB
-//                                if (membershipTable.membershipTable.containsKey(brokerID) && membershipTable.getMemberInfo(brokerID).isLeader) {
-//                                    Utilities.sendMembershipTableUpdates(connMap.get(0), "new", brokerID, peerID,
-//                                            peerHostName, peerPort, "", isLeader, isAlive);
-//                                    //membershipTable.print();
-//                                }
-//                            }
-
-
                         }
                         else if (type.equals("consumer")) { // hear from producer/LB only bc this broker is a leader
                             System.out.println("this Broker now has connected to CONSUMER: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
                             connWithConsumer = conn;
                         }
-
                     }
 
                     else {
@@ -299,18 +280,26 @@ public class LeaderBasedBroker {
 
                                 if (!inElection) { // if its heartbeat, me reply
                                     int senderId = f.getSenderID();
-                                  //  System.out.println("broker " + brokerID + " receiving heartbeat from broker " + senderId + "...");
+                                   // System.out.println("receiving heartbeat from broker " + senderId + "...");
 
                                     // receive heartbeat from broker and response with its own id
                                     Resp.Response heartBeatResponse = Resp.Response.newBuilder()
                                             .setType("heartbeat").setSenderID(brokerID).build();
                                     conn.send(heartBeatResponse.toByteArray());
                                     try {
-                                        Thread.sleep(300);
+                                        Thread.sleep(1000);
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }
-                                  //  membershipTable.getMemberInfo(senderId).setAlive(true);
+                                    System.out.println("(received and replying heart beat to: " + senderId + ")");
+                                    if(!membershipTable.getMemberInfo(senderId).isAlive) {
+                                        System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^ this is a new broker join ");
+                                        membershipTable.getMemberInfo(senderId).setAlive(true);
+                                        membershipTable.print();
+                                        Utilities.sendMembershipTableUpdates(connMap.get(0), "updateAlive", brokerID, peerID,
+                                                "", 0, "", membershipTable.getMemberInfo(peerID).isLeader, true);
+
+                                    }
 
                                 } else if (inElection && !f.getType().equals("heartbeat")) { // if election msg
                                     int senderId = f.getSenderID();
@@ -468,13 +457,13 @@ public class LeaderBasedBroker {
                   //  System.out.println("sent peer info to broker " + peerID + "...\n");
 
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(3000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
 
                     //sending heartbeat to brokers
-                    if (isAlive) {
+                   if (isAlive) {
                         System.out.println("Now sending heartbeat to " + peerID + "...\n");
                         HeartBeatSender sender = new HeartBeatSender(this.hostName,
                                 String.valueOf(this.port), connection, peerHostName, peerPort,

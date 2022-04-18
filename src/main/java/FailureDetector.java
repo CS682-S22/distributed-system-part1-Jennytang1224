@@ -43,14 +43,6 @@ public class FailureDetector {
 
             if (membershipTable.getMemberInfo(peerID).isLeader) { // leader is dead
                 //if peerid is leader, bully (send initial election msg and wait for election response)
-               // membershipTable.markDead(peerID);
-
-                //if this broker is leader, send table to load balancer
-//                if(membershipTable.getMemberInfo(brokerID).isLeader){
-//                    Utilities.sendMembershipTableUpdates(connMap.get(0), "updateAlive", brokerID, peerID,
-//                            "", 0, "", membershipTable.getMemberInfo(peerID).isLeader, false);
-//                    membershipTable.print();
-//                }
                 membershipTable.print();
                 BullyElection bully = new BullyElection(brokerID, membershipTable, connMap, conn);
                 bully.run();
@@ -70,11 +62,12 @@ public class FailureDetector {
                 }
                 inElection = false;
             }
-
-            System.out.println("~~~~~~~~~~~~~~~~~~table after detecting broker " + peerID + " failed to return heartbeat msg");
-            membershipTable.print();
-            System.out.println(" ");
-            listening = false;
+           // synchronized (this) {
+                System.out.println("~~~~~~~~~~~~~~~~~~table after detecting broker " + peerID + " failed to return heartbeat msg");
+                membershipTable.print();
+                System.out.println(" ");
+                listening = false;
+           // }
 
         }
 
@@ -108,14 +101,6 @@ public class FailureDetector {
             if(!isThereLowerIDBroker) { // if no such broker exists, im the new leader!
                 announceNewLeadership();
                 inElection = false;
-//
-//                //if this broker is leader, send table to load balancer
-//                if(membershipTable.getMemberInfo(brokerID).isLeader){
-//                    //send table to LB
-//                    Utilities.sendMembershipTableUpdates(connMap.get(0), "updateAlive", brokerID, peerID,
-//                            null, 0, "", membershipTable.getMemberInfo(peerID).isLeader, false);
-//                }
-
             }
         }
     }
