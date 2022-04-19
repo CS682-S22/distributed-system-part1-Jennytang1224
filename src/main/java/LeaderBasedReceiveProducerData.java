@@ -17,6 +17,7 @@ public class LeaderBasedReceiveProducerData implements Runnable{
     private int messageCounter;
 
 
+
     public LeaderBasedReceiveProducerData(Connection connection, ByteString recordBytes, Map<String, CopyOnWriteArrayList<ByteString>> topicMap, int messageCounter) {
         this.connection = connection;
         this.recordBytes = recordBytes;
@@ -27,26 +28,28 @@ public class LeaderBasedReceiveProducerData implements Runnable{
 
     @Override
     public void run(){
-        MessageInfo.Message d = null;
-        try {
-            d = MessageInfo.Message.parseFrom(recordBytes);
-        } catch (InvalidProtocolBufferException e) {
-            e.printStackTrace();
-        }
-        String topic = d.getTopic();
-        //   if(running) {
-        if(topicMap.containsKey(topic)){ //if key is in map
-            topicMap.get(topic).add(recordBytes);
-        }
-        else{ //if key is not in the map, create CopyOnWriteArrayList and add first record
-            CopyOnWriteArrayList<ByteString> newList = new CopyOnWriteArrayList<>();
-            newList.add(recordBytes);
-            topicMap.put(topic, newList);
+        if(messageCounter != 0) {
+            MessageInfo.Message d = null;
+            try {
+                d = MessageInfo.Message.parseFrom(recordBytes);
+            } catch (InvalidProtocolBufferException e) {
+                e.printStackTrace();
+            }
+            String topic = d.getTopic();
+            //   if(running) {
+            if (topicMap.containsKey(topic)) { //if key is in map
+                topicMap.get(topic).add(recordBytes);
+            } else { //if key is not in the map, create CopyOnWriteArrayList and add first record
+                CopyOnWriteArrayList<ByteString> newList = new CopyOnWriteArrayList<>();
+                newList.add(recordBytes);
+                topicMap.put(topic, newList);
+            }
+           // System.out.println("topic: " + topic);
+
+            System.out.println(">>> data stored and number of data received: " + messageCounter);
+            messageCounter++;
         }
 
-
-        this.messageCounter++;
-        System.out.println(">>> data stored and number of data received: " + messageCounter);
     }
 
 

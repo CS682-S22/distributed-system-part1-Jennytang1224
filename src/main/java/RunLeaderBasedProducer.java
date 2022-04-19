@@ -16,7 +16,7 @@ public class RunLeaderBasedProducer {
             System.exit(-1);
         }
         String LBLocation = "Jennys-MacBook-Pro.local:1430";
-        String filepath = "files/100_records.log";
+        String filepath = "files/5_records.log";
 
 //        //get lead broker location from LB
 //        Socket socket = null;

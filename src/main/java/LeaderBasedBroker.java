@@ -150,6 +150,7 @@ public class LeaderBasedBroker {
         private String type;
         int brokerID;
         int peerID;
+        int messageCounter = 0;
 
 
         public Receiver(String name, int port, Connection conn) {
@@ -199,17 +200,19 @@ public class LeaderBasedBroker {
                     }
 
                     else {
-                        if (type.equals("producer")) {  // when receiving data from LB/producer
+                        if (type.equals("producer")) {  // when receiving data from producer
                             System.out.println("!!!!!!!!! receiving data from producer...");
-                            synchronized (this) {
+                           // synchronized (this) {
                                 //save data to my topic map:
-                                Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, ByteString.copyFrom(buffer), topicMap, messageCounter));
+                                Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, ByteString.copyFrom(buffer), topicMap, messageCounter++));
                                 th.start();
                                 try {
                                     th.join();
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
+//                                messageCounter++;
+//                                System.out.println(">>> data stored and number of data received: " + messageCounter);
 
                                 //replications:
                                 if(!synchronous) { //replication with Asynchronous followers
@@ -256,9 +259,9 @@ public class LeaderBasedBroker {
                                     }
                                     DataReceiver.ackCount.getAndSet(0); //important!! reset to 0
                                 }
-                            }
+                           // }
                             counter++;
-                            messageCounter++;
+                           // messageCounter++;
                         }
 
                         else if (type.equals("consumer")){
@@ -550,7 +553,7 @@ public class LeaderBasedBroker {
                     brokerCounter++;  // next broker in the map
                // }
                 }
-              //  get all data from the leader:
+          //      get all data from the leader:
 //                try {
 //                    Thread.sleep(2000);
 //                } catch (InterruptedException e) {
