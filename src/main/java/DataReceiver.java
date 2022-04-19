@@ -34,6 +34,8 @@ class DataReceiver implements Runnable {
     MembershipTable membershipTable;
     Connection newBrokerConn;
     boolean newBrokerDataRequest;
+    int catchupDataCounter = 1;
+
 
     public DataReceiver(String name, int port, Connection conn, HashMap<Integer, Connection> dataConnMap,
                         boolean synchronous, int dataCounter, Map<String, CopyOnWriteArrayList<ByteString>> topicMap,
@@ -67,7 +69,7 @@ class DataReceiver implements Runnable {
                     }
 
                     type = p.getType(); // consumer or producer
-                    System.out.println("\n *** New Connection coming in ***");
+                    System.out.println("\n *** New Data Connection coming in ***");
                     System.out.println("Peer type: " + type);
                     peerHostName = p.getHostName();
                     peerPort = p.getPortNumber();
@@ -153,21 +155,26 @@ class DataReceiver implements Runnable {
                                 System.out.println("########## receive and store catchup data");
                                 //store data
                                 ByteString dataInBytes = m.getData();
-                                System.out.println(dataInBytes.toByteArray().toString());
-//                                Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, dataInBytes, topicMap, dataCounter));
-//                                th.start();
-//                                try {
-//                                    th.join();
-//                                } catch (InterruptedException e) {
-//                                    e.printStackTrace();
-//                                }
+                                MessageInfo.Message d = null;
+                                try {
+                                    d = MessageInfo.Message.parseFrom(dataInBytes);
+                                } catch (InvalidProtocolBufferException e) {
+                                    e.printStackTrace();
+                                }
+
+                                Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, dataInBytes, topicMap, catchupDataCounter));
+                                th.start();
+                                try {
+                                    th.join();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
 
                             }
 
-
-
                             dataCounter++;
                             counter++;
+                            catchupDataCounter++;
                         }
                     }
                 }

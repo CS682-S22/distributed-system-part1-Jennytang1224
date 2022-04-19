@@ -191,6 +191,7 @@ public class LeaderBasedBroker {
                             System.out.println("this broker NOW has connected to BROKER: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
                             peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
+                            int peerPort = Utilities.getPortRepByID(peerID);
                             if(membershipTable.membershipTable.containsKey(peerID) && !membershipTable.getMemberInfo(peerID).isAlive) {//new broker join
                                 System.out.println("%%%%%%%%%%%%%%%%%%%%%%%% new data join");
                                 dataConnection = new Connection(peerHostName, peerPort, true);
@@ -199,22 +200,23 @@ public class LeaderBasedBroker {
                                 dataConnMap.put(peerID, dataConnection); // add connection to map, {5:conn5, 4:conn4, 3:conn3}
                                 System.out.println(dataConnMap.toString());
 
+                                try {
+                                    Thread.sleep(2000);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                //  send peer info to other brokers
+                                String type = "broker";
+                                PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
+                                        .setType(type)
+                                        .setHostName(hostName)
+                                        .setPortNumber(dataPort)
+                                        .build();
+
+                                dataConnection.send(peerInfo.toByteArray());
+                                System.out.println("sent peer info to broker " + peerID + "  " + peerHostName + ":" + peerPort + "...");
+
                             }
-//                            try {
-//                                Thread.sleep(2000);
-//                            } catch (InterruptedException e) {
-//                                e.printStackTrace();
-//                            }
-                            // send peer info to other brokers
-//                            String type = "broker";
-//                            PeerInfo.Peer peerInfo = PeerInfo.Peer.newBuilder()
-//                                    .setType(type)
-//                                    .setHostName(hostName)
-//                                    .setPortNumber(dataPort)
-//                                    .build();
-//
-//                            dataConnection.send(peerInfo.toByteArray());
-//                            System.out.println("sent peer info to broker " + peerID + "  " + peerHostName + ":" + peerPort + "...");
 
                         }
                         else if (type.equals("consumer")) { // hear from producer/LB only bc this broker is a leader
@@ -591,7 +593,6 @@ public class LeaderBasedBroker {
                         .setSenderType("catchup")
                         .setLeadBrokerLocation(String.valueOf(brokerID)) // my broker id
                         .build();
-                System.out.println("before asking:" + dataConnMap.get(membershipTable.getLeaderID()));
                 dataConnMap.get(membershipTable.getLeaderID()).send(requestData.toByteArray());
                 System.out.println("############sent request to leader to catch up all data");
             }

@@ -34,22 +34,33 @@ public class AsynchronousReplication implements Runnable{
 
     @Override
     public void run() {
-        if (peerID != -1) { // for new broker catch up with data
+        if (peerID != -1) { // for new broker catch up with data, send record by record
             if(topicMap != null && topicMap.size() != 0 ) {
-                Acknowledgment.ack record = Acknowledgment.ack.newBuilder()
-                        .setSenderType("catchupData")
-                        .setData(ByteString.copyFrom(topicMap.toString().getBytes(StandardCharsets.UTF_8)))
-                        .build();
-                System.out.println(dataConnMap.toString());
-                System.out.println("in data connection: " + dataConnMap.get(peerID));
-                System.out.println("in data connection: " + conn);
+                String topic;
+                ByteString data;
+                for(Map.Entry<String, CopyOnWriteArrayList<ByteString>> entry: topicMap.entrySet()){
+                    topic = entry.getKey();
+                    for(int i = 0; i < entry.getValue().size(); i++){
+                        data = entry.getValue().get(i);
+                        System.out.println("topic: " + topic);
 
-                (dataConnMap.get(peerID)).send(record.toByteArray()); // send data message
-                System.out.println("######## sending catch up data to " + peerID);
+                        MessageInfo.Message record = MessageInfo.Message.newBuilder()
+                                .setTopic(topic)
+                                .setValue(data)
+                                .build();
+
+                        Acknowledgment.ack catchupData = Acknowledgment.ack.newBuilder()
+                                .setSenderType("catchupData")
+                                .setData(ByteString.copyFrom(record.toByteArray()))
+                                .build();
+
+
+                        (dataConnMap.get(peerID)).send(catchupData.toByteArray()); // send data message
+                        System.out.println("######## sending catch up data to " + peerID);
+                    }
+
+                }
             } else{
-                System.out.println(dataConnMap.toString());
-                System.out.println("in data connection: " + dataConnMap.get(peerID));
-                System.out.println("in data connection: " + conn);
                 System.out.println("####### nothing in my topic map yet");
             }
 
