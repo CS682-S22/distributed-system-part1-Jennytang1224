@@ -93,7 +93,7 @@ public class Connection {
     public void writeToSocket(byte[] message){
         try {
             if(this.output == null){
-                System.out.println("(This broker is NOT in use)");
+                //System.out.println("(This broker is NOT in use)");
                 return;
             }
             this.output.writeInt(message.length);

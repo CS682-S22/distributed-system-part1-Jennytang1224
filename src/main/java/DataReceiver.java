@@ -142,12 +142,13 @@ class DataReceiver implements Runnable {
 //
 //                                conn.send(response.toByteArray());
                             //newBrokerDataRequest = true;
+                                System.out.println("connection when request arrive: " + conn);
                             int peerId = Integer.parseInt(m.getLeadBrokerLocation());
                             AsynchronousReplication asynchronousReplication = new AsynchronousReplication(membershipTable, buffer, brokerID, dataConnMap, peerId, topicMap, conn);//use data connections
                                 //asynchronousReplication.run();
                             Thread rep = new Thread(asynchronousReplication);
                             rep.start();
-                        }
+                            }
                             else if(m.getSenderType().equals("catchupData")){
                                 System.out.println("########## receive and store catchup data");
                                 //store data

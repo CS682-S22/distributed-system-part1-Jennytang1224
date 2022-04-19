@@ -35,14 +35,23 @@ public class AsynchronousReplication implements Runnable{
     @Override
     public void run() {
         if (peerID != -1) { // for new broker catch up with data
+            if(topicMap != null && topicMap.size() != 0 ) {
+                Acknowledgment.ack record = Acknowledgment.ack.newBuilder()
+                        .setSenderType("catchupData")
+                        .setData(ByteString.copyFrom(topicMap.toString().getBytes(StandardCharsets.UTF_8)))
+                        .build();
+                System.out.println(dataConnMap.toString());
+                System.out.println("in data connection: " + dataConnMap.get(peerID));
+                System.out.println("in data connection: " + conn);
 
-            Acknowledgment.ack record = Acknowledgment.ack.newBuilder()
-                    .setSenderType("catchupData")
-                    .setData(ByteString.copyFrom(topicMap.toString().getBytes(StandardCharsets.UTF_8)))
-                    .build();
-            dataConnMap.get(peerID).send(record.toByteArray()); // send data message
-            System.out.println("######## sending catch up data to " + peerID);
-
+                (dataConnMap.get(peerID)).send(record.toByteArray()); // send data message
+                System.out.println("######## sending catch up data to " + peerID);
+            } else{
+                System.out.println(dataConnMap.toString());
+                System.out.println("in data connection: " + dataConnMap.get(peerID));
+                System.out.println("in data connection: " + conn);
+                System.out.println("####### nothing in my topic map yet");
+            }
 
         } else {
             Runnable replication = () -> {
