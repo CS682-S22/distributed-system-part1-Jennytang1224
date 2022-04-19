@@ -46,8 +46,8 @@ public class RunLeaderBasedProducer {
 
         boolean receivedAck;
         LeaderBasedProducer leaderBasedProducer = new LeaderBasedProducer(LBLocation);
-        try { // every 3 sec request new data
-            Thread.sleep(500);
+        try {
+            Thread.sleep(1500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -97,7 +97,7 @@ public class RunLeaderBasedProducer {
                         }
 
                         try { // CHECK ACK within timeout
-                            Thread.sleep(100); // drop this num will cause not receiving ack on time
+                            Thread.sleep(2000); // drop this num will cause not receiving ack on time
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }

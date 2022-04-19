@@ -18,8 +18,9 @@ public class AsynchronousReplication implements Runnable{
     private static ExecutorService executor;
     int peerID;
     Map<String, CopyOnWriteArrayList<ByteString>> topicMap;
+    Connection conn;
 
-    public AsynchronousReplication(MembershipTable membershipTable, byte[] buffer, int brokerID, HashMap<Integer, Connection> dataConnMap, int peerID, Map<String, CopyOnWriteArrayList<ByteString>> topicMap ) {
+    public AsynchronousReplication(MembershipTable membershipTable, byte[] buffer, int brokerID, HashMap<Integer, Connection> dataConnMap, int peerID, Map<String, CopyOnWriteArrayList<ByteString>> topicMap, Connection conn ) {
         this.membershipTable = membershipTable;
         this.buffer = buffer;
         this.brokerID = brokerID;
@@ -28,6 +29,7 @@ public class AsynchronousReplication implements Runnable{
         executor = Executors.newFixedThreadPool(10);
         this.peerID = peerID;
         this.topicMap = topicMap;
+        this.conn = conn;
     }
 
     @Override
@@ -38,17 +40,14 @@ public class AsynchronousReplication implements Runnable{
                     .setSenderType("catchupData")
                     .setData(ByteString.copyFrom(topicMap.toString().getBytes(StandardCharsets.UTF_8)))
                     .build();
-            (dataConnMap.get(peerID)).send(record.toByteArray()); // send data message
+            dataConnMap.get(peerID).send(record.toByteArray()); // send data message
             System.out.println("######## sending catch up data to " + peerID);
+
+
         } else {
             Runnable replication = () -> {
                 for (int id : membershipTable.getKeys()) {
                     if (membershipTable.getMemberInfo(id).isAlive && id != brokerID) {
-                        //draft data
-//                    ByteString b = ByteString.copyFrom(buffer);
-//                    MessageInfo.Message record = MessageInfo.Message.newBuilder()
-//                            .setValue(b)
-//                            .build();
                         Acknowledgment.ack record = Acknowledgment.ack.newBuilder()
                                 .setSenderType("data")
                                 .setData(ByteString.copyFrom(buffer))

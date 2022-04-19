@@ -29,28 +29,45 @@ public class SynchronousReplication implements Runnable{
     }
 
 
-
-
     @Override
     public void run() {
-            for (int id : membershipTable.getKeys()) {
-                if (membershipTable.getMemberInfo(id).isAlive && id != brokerID) {
-                    //draft data
+        for (int id : membershipTable.getKeys()) {
+            if (membershipTable.getMemberInfo(id).isAlive && id != brokerID) {
+                //draft data
 //                    ByteString b = ByteString.copyFrom(buffer);
 //                    MessageInfo.Message record = MessageInfo.Message.newBuilder()
 //                            .setValue(b)
 //                            .build();
-                    Acknowledgment.ack record = Acknowledgment.ack.newBuilder()
-                            .setSenderType("data")
-                            .setData(ByteString.copyFrom(buffer))
-                            .build();
-                    numOfAckNeeded.getAndIncrement();
-                    (dataConnMap.get(id)).send(record.toByteArray()); // send data message
-                    System.out.println("this lead broker sent sync replication of data to follower " + id);
-                }
+                Acknowledgment.ack record = Acknowledgment.ack.newBuilder()
+                        .setSenderType("data")
+                        .setData(ByteString.copyFrom(buffer))
+                        .build();
+//
+//                    try {
+//                        Thread.sleep(100);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                    if(membershipTable.getMemberInfo(id).isAlive) {
+//                        numOfAckNeeded.getAndIncrement();
+//                    }
+                (dataConnMap.get(id)).send(record.toByteArray()); // send data message
+                System.out.println("this lead broker sent sync replication of data to follower " + id);
             }
+        }
 
-
+//        try { // to get tha ack count
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//        for (int id : membershipTable.getKeys()) {
+//            if (membershipTable.getMemberInfo(id).isAlive && id != brokerID) {
+//                //if(membershipTable.getMemberInfo(id).isAlive) {
+//                        numOfAckNeeded.getAndIncrement();
+//                 //   }
+//            }
+//        }
     }
 
 }

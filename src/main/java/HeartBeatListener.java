@@ -12,7 +12,7 @@ public class HeartBeatListener implements Runnable {
     MembershipTable membershipTable;
     private CS601BlockingQueue<Resp.Response> bq;
     private ExecutorService executor;
-    int delay = 1000;
+    int delay = 400;
     int retires = 3;
     int peerID;
     volatile boolean sending;
@@ -78,11 +78,11 @@ public class HeartBeatListener implements Runnable {
 
                     Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
                     conn.send(heartBeatMessage.toByteArray());
-                    try { // speed of heartbeat
-                        Thread.sleep(1500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+//                    try { // speed of heartbeat
+//                        Thread.sleep(500);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
 
                 }
                 else if(inElection){// if its election response
