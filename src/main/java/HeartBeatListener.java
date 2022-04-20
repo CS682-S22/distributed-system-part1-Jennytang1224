@@ -12,7 +12,7 @@ public class HeartBeatListener implements Runnable {
     MembershipTable membershipTable;
     private CS601BlockingQueue<Resp.Response> bq;
     private ExecutorService executor;
-    int delay = 1000;
+    int delay = 500;
     int retires = 3;
     int peerID;
     volatile boolean sending;
