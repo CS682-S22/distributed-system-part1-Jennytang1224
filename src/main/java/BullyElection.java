@@ -42,7 +42,7 @@ public class BullyElection {
             if ((membershipTable.membershipTable.containsKey(peerID)) && (membershipTable.getMemberInfo(peerID).isAlive) && (peerID < brokerId)) {
                 //get connection between this broker and the other broker
           //  if ((membershipTable.getMemberInfo(peerID).isAlive)
-                System.out.println("sent election message to " + peerID);
+                System.out.println("-> > > sent election message to " + peerID);
                 Connection conn = connMap.get(peerID);
 
                 //draft election msg

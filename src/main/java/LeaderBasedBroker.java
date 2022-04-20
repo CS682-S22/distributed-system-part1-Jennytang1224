@@ -196,14 +196,18 @@ public class LeaderBasedBroker {
                             System.out.println("this broker NOW has connected to BROKER: " + peerHostName + " port: " + peerPort + "\n");
                             counter++;
                             peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
-                            int peerPort = Utilities.getPortRepByID(peerID);
+                            int peerDataPort = Utilities.getPortRepByID(peerID);
+                            int peerPort = Utilities.getPortByID(peerID);
                             if(membershipTable.membershipTable.containsKey(peerID) && !membershipTable.getMemberInfo(peerID).isAlive) {//new broker join
-                                System.out.println("%%%%%%%%%%%%%%%%%%%%%%%% new data join");
-                                dataConnection = new Connection(peerHostName, peerPort, true);
-                                System.out.println("made data connection with peer: " + peerHostName + ":" + peerPort);
-                                peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
+                                System.out.println("%%%%%%%%%%%%%%%%%%%%%%%% new data connection join");
+                                dataConnection = new Connection(peerHostName, peerDataPort, true);
+                                Connection regularConnection = new Connection(peerHostName, peerPort, true);
+                                System.out.println("made data connection with peer: " + peerHostName + ":" + peerDataPort);
+                                System.out.println("made connection with peer: " + peerHostName + ":" + peerPort);
+
+                                //  peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
                                 dataConnMap.put(peerID, dataConnection); // add connection to map, {5:conn5, 4:conn4, 3:conn3}
-                                System.out.println(dataConnMap.toString());
+                                connMap.put(peerID, regularConnection);
 
                                 try {
                                     Thread.sleep(2000);
@@ -219,7 +223,8 @@ public class LeaderBasedBroker {
                                         .build();
 
                                 dataConnection.send(peerInfo.toByteArray());
-                                System.out.println("sent peer info to broker " + peerID + "  " + peerHostName + ":" + peerPort + "...");
+                                regularConnection.send(peerInfo.toByteArray());
+                               // System.out.println("sent peer info to broker " + peerID + "  " + peerHostName + ":" + peerPort + "...");
 
                             }
 
@@ -413,17 +418,19 @@ public class LeaderBasedBroker {
                                         currentLeader = newLeader;
 
                                         System.out.println("!!!!!!!!! election ended on broker " + brokerID + " side!");
-                                        inElection = false;
+
 
                                         Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
                                         conn.send(heartBeatMessage.toByteArray());
+                                        inElection = false;
 
                                     } else { //other sends election msg to me, me needs reply to other broker
                                         Resp.Response electionResponse = Resp.Response.newBuilder().setType("election")
                                                 .setSenderID(brokerID).setWinnerID(-1).build();
                                         conn.send(electionResponse.toByteArray());
-                                        inElection = true;
+
                                         System.out.println(" -> > > broker " + brokerID + " reply to broker " + senderId + " election msg...");
+                                        inElection = true;
                                     }
                                 }
                             }

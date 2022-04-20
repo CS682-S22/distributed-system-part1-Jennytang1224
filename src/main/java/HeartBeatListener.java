@@ -107,10 +107,11 @@ public class HeartBeatListener implements Runnable {
                             System.out.println("weird ... no current leader right now");
                         }
 
-                        inElection = false; // election ended on my end
                         System.out.println("election ended");
                         Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
                         conn.send(heartBeatMessage.toByteArray());
+                        inElection = false; // election ended on my end
+
 
                     }
                 }

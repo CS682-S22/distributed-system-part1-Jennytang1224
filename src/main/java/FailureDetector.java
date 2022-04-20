@@ -32,10 +32,6 @@ public class FailureDetector {
         return currentLeader;
     }
 
-    public boolean stillListening(){
-        return listening;
-    }
-
     public void run() {
         currentLeader = membershipTable.getLeaderID();
         if(!inElection){ //if expecting heartbeat, but nothing
@@ -47,9 +43,8 @@ public class FailureDetector {
                 BullyElection bully = new BullyElection(brokerID, membershipTable, connMap, conn);
                 bully.run();
                 peerCounterForElection = bully.getPeerCounter();
-                System.out.println("~~~ # of peers that me (broker " + brokerID + ") send election msg to: " + peerCounterForElection);
+                System.out.println("-> > > > > sent election messages to " +  peerCounterForElection + "peers");
                 inElection = true;
-               // membershipTable.switchLeaderShip(peerID, peerID + 1); // naively choosing next smallest id, change later
             } else { // if peerid is follower, update table  - mark dead
                 membershipTable.markDead(peerID);
 

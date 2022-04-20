@@ -119,7 +119,6 @@ class DataReceiver implements Runnable {
 
                             }
                             else if(m.getSenderType().equals("catchup")) { // new broker join and wants to catchup on data
-                                System.out.println("connection when request arrive: " + conn);
                                 int peerId = Integer.parseInt(m.getLeadBrokerLocation());
                                 boolean clear = false;
                                 AsynchronousReplication asynchronousReplication =
