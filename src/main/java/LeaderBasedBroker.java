@@ -346,12 +346,12 @@ public class LeaderBasedBroker {
                                         e.printStackTrace();
                                     }
                                     System.out.println("(received and replying heart beat to: " + senderId + ")");
-                                 //   if(!membershipTable.getMemberInfo(senderId).isAlive) {
+                                    if(!membershipTable.getMemberInfo(senderId).isAlive) {
                                        membershipTable.getMemberInfo(senderId).setAlive(true);
-                                        membershipTable.print();
+                                       // membershipTable.print();
                                         Utilities.sendMembershipTableUpdates(connMap.get(0), "updateAlive", brokerID, peerID,
                                                 "", 0, "", membershipTable.getMemberInfo(peerID).isLeader, true);
-                                 //   }
+                                    }
 
 
                                 } else if (inElection && !f.getType().equals("heartbeat")) { // if election msg
