@@ -16,7 +16,7 @@ public class RunLeaderBasedProducer {
             System.exit(-1);
         }
         String LBLocation = "Jennys-MacBook-Pro.local:1430";
-        String filepath = "files/5_records.log";
+        String filepath = "files/10_records.log";
 
 //        //get lead broker location from LB
 //        Socket socket = null;
@@ -90,19 +90,42 @@ public class RunLeaderBasedProducer {
                                 .setOffset(offset)
                                 .build();
 
-                        // producer send record to broker
-                        if(count == 0) { //send initial message regardless
-                            leaderBasedProducerToBroker.send(record.toByteArray());
-                            count++;
-                        }
+//                        // producer send record to broker
+//                        if(count == 0) { //send initial message regardless
+//                            leaderBasedProducerToBroker.send(record.toByteArray());
+//                            count++;
+//                        }
+//
+//                        try { // CHECK ACK within timeout
+//                            Thread.sleep(2000); // drop this num will cause not receiving ack on time
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+//                        receivedAck = leaderBasedProducerToBroker.getAckStatus();
+//                        System.out.println("received ack: " + receivedAck);
+//
+//                        if (!receivedAck) {
+//                            System.out.println("DID NOT RECEIVE ACK FROM LEAD BROKER...");
+//                            break;
+//                        } else {
+//                            leaderBasedProducerToBroker.send(record.toByteArray());
+//                            System.out.println("An ACK received and a message has been send!");
+//                        }
+
+
 
                         try { // CHECK ACK within timeout
                             Thread.sleep(2000); // drop this num will cause not receiving ack on time
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        receivedAck = leaderBasedProducerToBroker.getAckStatus();
-                        System.out.println("received ack: " + receivedAck);
+                        if(count == 0) { // first time will send data regardless
+                            receivedAck = true;
+                            count++;
+                        }else {
+                            receivedAck = leaderBasedProducerToBroker.getAckStatus();
+                            System.out.println("received ack: " + receivedAck);
+                        }
 
                         if (!receivedAck) {
                             System.out.println("DID NOT RECEIVE ACK FROM LEAD BROKER...");

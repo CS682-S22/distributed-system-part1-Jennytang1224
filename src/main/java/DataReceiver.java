@@ -34,7 +34,7 @@ class DataReceiver implements Runnable {
     MembershipTable membershipTable;
     Connection newBrokerConn;
     boolean newBrokerDataRequest;
-    int catchupDataCounter = 1;
+    int catchupDataCounter = 0;
 
 
     public DataReceiver(String name, int port, Connection conn, HashMap<Integer, Connection> dataConnMap,

@@ -47,7 +47,7 @@ public class LeaderBasedBroker {
     static int dataPort;
     static Server dataServer;
     static HashMap<Integer, Connection> dataConnMap = new HashMap<>();
-    static int dataCounter = 0;
+    static int dataCounter = 1;
     static boolean synchronous;
     static Connection connWithProducer;
     static Connection connWithConsumer;
@@ -260,7 +260,7 @@ public class LeaderBasedBroker {
                                     Thread rep = new Thread(synchronousReplication);
                                     rep.start();
                                     try { // to get tha ack count
-                                        Thread.sleep(1800);
+                                        Thread.sleep(1900);
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }
@@ -330,7 +330,7 @@ public class LeaderBasedBroker {
                                             .setType("heartbeat").setSenderID(brokerID).build();
                                     conn.send(heartBeatResponse.toByteArray());
                                     try {
-                                        Thread.sleep(1000);
+                                        Thread.sleep(500);
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }

@@ -28,7 +28,7 @@ public class LeaderBasedReceiveProducerData implements Runnable{
 
     @Override
     public void run(){
-        if(messageCounter != 0) {
+      //  if(messageCounter != 0) {
             MessageInfo.Message d = null;
             try {
                 d = MessageInfo.Message.parseFrom(recordBytes);
@@ -45,10 +45,10 @@ public class LeaderBasedReceiveProducerData implements Runnable{
                 topicMap.put(topic, newList);
             }
            // System.out.println("topic: " + topic);
-
-            System.out.println(">>> data stored and number of data received: " + messageCounter);
             messageCounter++;
-        }
+            System.out.println(">>> data stored and number of data received: " + messageCounter);
+
+    //    }
 
     }
 

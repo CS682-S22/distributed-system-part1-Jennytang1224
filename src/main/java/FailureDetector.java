@@ -72,7 +72,7 @@ public class FailureDetector {
         }
 
         else{ // if expecting election msg, but nothing
-            System.out.println("... is expecting election msg, but nothing");
+            //System.out.println("... is expecting election msg, but nothing");
            // if(!membershipTable.getMemberInfo(peerID).isLeader) {
 
                 membershipTable.markDead(peerID); // mark the peer is dead
@@ -91,7 +91,7 @@ public class FailureDetector {
                 // int olderLeader = membershipTable.getLeaderID();
                 if ((membershipTable.membershipTable.containsKey(i)) && (membershipTable.getMemberInfo(i).isAlive) && (i < brokerID)) {
                     // there exists a more qualified broker than me to be the leader
-                    System.out.println("im out..waiting for leader announcement from other broker..");
+                   // System.out.println("im out..waiting for leader announcement from other broker..");
                     isThereLowerIDBroker = true;
                     inElection = true;
                     break;
