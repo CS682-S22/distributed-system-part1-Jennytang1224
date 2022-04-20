@@ -341,7 +341,7 @@ public class LeaderBasedBroker {
                                             .setType("heartbeat").setSenderID(brokerID).build();
                                     conn.send(heartBeatResponse.toByteArray());
                                     try {
-                                        Thread.sleep(1000);
+                                        Thread.sleep(500);
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }
