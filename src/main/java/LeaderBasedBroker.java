@@ -282,7 +282,7 @@ public class LeaderBasedBroker {
                                         }
                                     }
                                     System.out.println("RECEIVED ACK COUNT:" + DataReceiver.ackCount + " COLLECTING ACK COUNT: " + synchronousReplication.numOfAckNeeded);
-                                    if(DataReceiver.ackCount.intValue() == synchronousReplication.numOfAckNeeded.intValue()){//all followers get replica
+                                    if(DataReceiver.ackCount.intValue() >= synchronousReplication.numOfAckNeeded.intValue()){//all followers get replica
                                         //send producer a big ack for next data
                                         System.out.println("sending big ack to producer WITH CONFIRMING all followers get the data");
                                         Acknowledgment.ack ackToProducer = Acknowledgment.ack.newBuilder()
