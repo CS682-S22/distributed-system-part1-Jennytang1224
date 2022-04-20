@@ -341,17 +341,17 @@ public class LeaderBasedBroker {
                                             .setType("heartbeat").setSenderID(brokerID).build();
                                     conn.send(heartBeatResponse.toByteArray());
                                     try {
-                                        Thread.sleep(500);
+                                        Thread.sleep(300);
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }
                                     System.out.println("(received and replying heart beat to: " + senderId + ")");
-                                    if(!membershipTable.getMemberInfo(senderId).isAlive) {
+                                 //   if(!membershipTable.getMemberInfo(senderId).isAlive) {
                                        membershipTable.getMemberInfo(senderId).setAlive(true);
                                         membershipTable.print();
                                         Utilities.sendMembershipTableUpdates(connMap.get(0), "updateAlive", brokerID, peerID,
                                                 "", 0, "", membershipTable.getMemberInfo(peerID).isLeader, true);
-                                    }
+                                 //   }
 
 
                                 } else if (inElection && !f.getType().equals("heartbeat")) { // if election msg
