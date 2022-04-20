@@ -55,8 +55,10 @@ public class LeaderBasedBroker {
     static SynchronousReplication synchronousReplication;
     static AsynchronousReplication asynchronousReplication;
     static Connection dataConnection;
+    static boolean isFailure;
 
-    public LeaderBasedBroker(String hostName, int port, int dataPort, boolean synchronous) {
+
+    public LeaderBasedBroker(String hostName, int port, int dataPort, boolean synchronous, boolean isFailure) {
         this.hostName = hostName;
         this.port = port;
         this.topicList = new CopyOnWriteArrayList<>();
@@ -64,6 +66,7 @@ public class LeaderBasedBroker {
         this.executor = Executors.newSingleThreadExecutor();
         this.dataPort = dataPort;
         this.synchronous = synchronous;
+        this.isFailure = isFailure;
     }
 
 
@@ -84,9 +87,10 @@ public class LeaderBasedBroker {
                 e.printStackTrace();
             }
             while (running) {
+                int clearCounter = 0;
                 dataConnection = this.dataServer.nextConnection(); // calls accept on server socket to block
                 dr = new DataReceiver(this.hostName, this.dataPort, dataConnection, dataConnMap,
-                        synchronous, dataCounter, topicMap, membershipTable);
+                        synchronous, dataCounter, topicMap, membershipTable, clearCounter);
                 Thread dataServerReceiver = new Thread(dr);
                 dataServerReceiver.start();
             }
@@ -151,6 +155,7 @@ public class LeaderBasedBroker {
         int brokerID;
         int peerID;
         int messageCounter = 0;
+        int replicaCounter = 0;
 
 
         public Receiver(String name, int port, Connection conn) {
@@ -228,10 +233,11 @@ public class LeaderBasedBroker {
 
                     else {
                         if (type.equals("producer")) {  // when receiving data from producer
+
                             System.out.println("!!!!!!!!! receiving data from producer...");
                            // synchronized (this) {
                                 //save data to my topic map:
-                                Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, ByteString.copyFrom(buffer), topicMap, messageCounter++));
+                                Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, ByteString.copyFrom(buffer), topicMap, messageCounter++, false));
                                 th.start();
                                 try {
                                     th.join();
@@ -243,7 +249,7 @@ public class LeaderBasedBroker {
 
                                 //replications:
                                 if(!synchronous) { //replication with Asynchronous followers
-                                    asynchronousReplication = new AsynchronousReplication(membershipTable, buffer, brokerID, dataConnMap, -1, topicMap, conn);//use data connections
+                                    asynchronousReplication = new AsynchronousReplication(membershipTable, buffer, brokerID, dataConnMap, -1, topicMap, conn, false);//use data connections
                                  //   replication.run();
                                     Thread rep = new Thread(asynchronousReplication);
                                     rep.start();
@@ -255,7 +261,7 @@ public class LeaderBasedBroker {
                                     connWithProducer.send(ackToProducer.toByteArray());
                                 }else{ //replication with Synchronous followers
                                     //need to send ack
-                                    synchronousReplication = new SynchronousReplication(membershipTable, buffer, brokerID, dataConnMap);//use data connections
+                                    synchronousReplication = new SynchronousReplication(membershipTable, buffer, brokerID, dataConnMap, isFailure, messageCounter);//use data connections
                                     //   replication.run();
                                     Thread rep = new Thread(synchronousReplication);
                                     rep.start();
@@ -348,17 +354,40 @@ public class LeaderBasedBroker {
                                     int newLeader = f.getWinnerID();
                                     System.out.println(" -> > > receiving election msg from peer " + senderId);
                                     if (newLeader != -1) {//if other inform me new leader, me updated table
-                                        System.out.println("new leader id:" + newLeader);
+                                        System.out.println("        *** NEW LEADER ID:" + newLeader + " ***");
 
                                         int oldLeader = membershipTable.getLeaderID();
                                         if (oldLeader != -1) { // there's a leader
-                                            System.out.println("in my table updated the new leader to " + newLeader);
+                                            System.out.println("~~~~~~~~~~~~~~~~~~~~~~~ in my table updated the new leader to " + newLeader);
                                             membershipTable.switchLeaderShip(oldLeader, newLeader);//update new leader
                                         } else {
                                             System.out.println("weird ... no current leader right now");
                                         }
                                         membershipTable.getMemberInfo(senderId).setAlive(true);
                                         membershipTable.print();
+
+                                        //see if I as new leader has the newest data by comparing topicMap size
+                                        int currentMapSize = 0;
+                                        for(Map.Entry<String, CopyOnWriteArrayList<ByteString>> entry : topicMap.entrySet()) {
+                                            for(int i = 0; i < entry.getValue().size(); i++){
+                                                currentMapSize++;
+                                            }
+                                        }
+
+                                     //   System.out.println("topic map size before sending to compare: " + currentMapSize);
+                                        for (int id : membershipTable.getKeys()) {
+                                            if(membershipTable.getMemberInfo(id).isAlive && id != brokerID) {
+                                                System.out.println("sending request to broker " + id + " to compare data");
+                                                Acknowledgment.ack requestNewestData = Acknowledgment.ack.newBuilder()
+                                                        .setSenderType("requestNewestData")
+                                                        .setNum(currentMapSize) // my topicMap size
+                                                        .setLeadBrokerLocation(String.valueOf(brokerID))
+                                                        .build();
+                                                dataConnMap.get(id).send(requestNewestData.toByteArray());
+                                            }
+                                        }
+
+
 
                                         //if this broker is leader, send table to load balancer
                                         if (membershipTable.getMemberInfo(brokerID).isLeader) {
@@ -370,13 +399,6 @@ public class LeaderBasedBroker {
                                             int LBPort = Utilities.getPortByID(0);
                                             Connection connLB = new Connection(LBHostName, LBPort, true); // make connection to peers in config
                                             Utilities.leaderConnectToLB(LBHostName, LBPort, peerHostName, peerPort, connLB);
-//
-//                                                try { // every 3 sec request new data
-//                                                    Thread.sleep(1000);
-//                                                } catch (InterruptedException e) {
-//                                                    e.printStackTrace();
-//                                                }
-
                                             // set new leadership
                                             Utilities.sendMembershipTableUpdates(connLB, "updateLeader", brokerID, newLeader,
                                                     "", 0, "", true, true);

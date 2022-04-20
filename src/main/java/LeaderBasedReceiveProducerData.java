@@ -15,20 +15,23 @@ public class LeaderBasedReceiveProducerData implements Runnable{
     private Map<String, CopyOnWriteArrayList<ByteString>> topicMap;// <topic1: topic1_list, topic2: topic2_list>
     private String outputPath = "files/idMapOffset";
     private int messageCounter;
+    boolean clear;
 
 
 
-    public LeaderBasedReceiveProducerData(Connection connection, ByteString recordBytes, Map<String, CopyOnWriteArrayList<ByteString>> topicMap, int messageCounter) {
+    public LeaderBasedReceiveProducerData(Connection connection, ByteString recordBytes, Map<String, CopyOnWriteArrayList<ByteString>> topicMap,
+                                          int messageCounter, boolean clear) {
         this.connection = connection;
         this.recordBytes = recordBytes;
         this.topicMap = topicMap;
         this.messageCounter = messageCounter;
+        this.clear = clear;
 
     }
 
     @Override
     public void run(){
-      //  if(messageCounter != 0) {
+
             MessageInfo.Message d = null;
             try {
                 d = MessageInfo.Message.parseFrom(recordBytes);
@@ -36,7 +39,7 @@ public class LeaderBasedReceiveProducerData implements Runnable{
                 e.printStackTrace();
             }
             String topic = d.getTopic();
-            //   if(running) {
+
             if (topicMap.containsKey(topic)) { //if key is in map
                 topicMap.get(topic).add(recordBytes);
             } else { //if key is not in the map, create CopyOnWriteArrayList and add first record
@@ -44,11 +47,10 @@ public class LeaderBasedReceiveProducerData implements Runnable{
                 newList.add(recordBytes);
                 topicMap.put(topic, newList);
             }
-           // System.out.println("topic: " + topic);
             messageCounter++;
-            System.out.println(">>> data stored and number of data received: " + messageCounter);
+            System.out.println(" >>> data stored and number of data received: " + messageCounter + "\n");
 
-    //    }
+
 
     }
 

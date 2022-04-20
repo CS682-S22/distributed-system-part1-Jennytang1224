@@ -8,8 +8,8 @@ option java_outer_classname = "Acknowledgment";
 
 
 message ack{
-  string senderType = 1; // broker or LB
-  int32 seqNum = 2;
+  string senderType = 1;
+  int32 num = 2;
   string leadBrokerLocation = 3;
   bytes data = 4;
 }

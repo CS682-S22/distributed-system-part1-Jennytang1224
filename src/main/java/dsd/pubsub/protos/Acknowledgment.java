@@ -19,19 +19,11 @@ public final class Acknowledgment {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <pre>
-     * broker or LB
-     * </pre>
-     *
      * <code>string senderType = 1;</code>
      * @return The senderType.
      */
     java.lang.String getSenderType();
     /**
-     * <pre>
-     * broker or LB
-     * </pre>
-     *
      * <code>string senderType = 1;</code>
      * @return The bytes for senderType.
      */
@@ -39,10 +31,10 @@ public final class Acknowledgment {
         getSenderTypeBytes();
 
     /**
-     * <code>int32 seqNum = 2;</code>
-     * @return The seqNum.
+     * <code>int32 num = 2;</code>
+     * @return The num.
      */
-    int getSeqNum();
+    int getNum();
 
     /**
      * <code>string leadBrokerLocation = 3;</code>
@@ -118,7 +110,7 @@ public final class Acknowledgment {
             }
             case 16: {
 
-              seqNum_ = input.readInt32();
+              num_ = input.readInt32();
               break;
             }
             case 26: {
@@ -167,10 +159,6 @@ public final class Acknowledgment {
     public static final int SENDERTYPE_FIELD_NUMBER = 1;
     private volatile java.lang.Object senderType_;
     /**
-     * <pre>
-     * broker or LB
-     * </pre>
-     *
      * <code>string senderType = 1;</code>
      * @return The senderType.
      */
@@ -188,10 +176,6 @@ public final class Acknowledgment {
       }
     }
     /**
-     * <pre>
-     * broker or LB
-     * </pre>
-     *
      * <code>string senderType = 1;</code>
      * @return The bytes for senderType.
      */
@@ -210,15 +194,15 @@ public final class Acknowledgment {
       }
     }
 
-    public static final int SEQNUM_FIELD_NUMBER = 2;
-    private int seqNum_;
+    public static final int NUM_FIELD_NUMBER = 2;
+    private int num_;
     /**
-     * <code>int32 seqNum = 2;</code>
-     * @return The seqNum.
+     * <code>int32 num = 2;</code>
+     * @return The num.
      */
     @java.lang.Override
-    public int getSeqNum() {
-      return seqNum_;
+    public int getNum() {
+      return num_;
     }
 
     public static final int LEADBROKERLOCATION_FIELD_NUMBER = 3;
@@ -287,8 +271,8 @@ public final class Acknowledgment {
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(senderType_)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, senderType_);
       }
-      if (seqNum_ != 0) {
-        output.writeInt32(2, seqNum_);
+      if (num_ != 0) {
+        output.writeInt32(2, num_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(leadBrokerLocation_)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 3, leadBrokerLocation_);
@@ -308,9 +292,9 @@ public final class Acknowledgment {
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(senderType_)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, senderType_);
       }
-      if (seqNum_ != 0) {
+      if (num_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(2, seqNum_);
+          .computeInt32Size(2, num_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(leadBrokerLocation_)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, leadBrokerLocation_);
@@ -336,8 +320,8 @@ public final class Acknowledgment {
 
       if (!getSenderType()
           .equals(other.getSenderType())) return false;
-      if (getSeqNum()
-          != other.getSeqNum()) return false;
+      if (getNum()
+          != other.getNum()) return false;
       if (!getLeadBrokerLocation()
           .equals(other.getLeadBrokerLocation())) return false;
       if (!getData()
@@ -355,8 +339,8 @@ public final class Acknowledgment {
       hash = (19 * hash) + getDescriptor().hashCode();
       hash = (37 * hash) + SENDERTYPE_FIELD_NUMBER;
       hash = (53 * hash) + getSenderType().hashCode();
-      hash = (37 * hash) + SEQNUM_FIELD_NUMBER;
-      hash = (53 * hash) + getSeqNum();
+      hash = (37 * hash) + NUM_FIELD_NUMBER;
+      hash = (53 * hash) + getNum();
       hash = (37 * hash) + LEADBROKERLOCATION_FIELD_NUMBER;
       hash = (53 * hash) + getLeadBrokerLocation().hashCode();
       hash = (37 * hash) + DATA_FIELD_NUMBER;
@@ -496,7 +480,7 @@ public final class Acknowledgment {
         super.clear();
         senderType_ = "";
 
-        seqNum_ = 0;
+        num_ = 0;
 
         leadBrokerLocation_ = "";
 
@@ -529,7 +513,7 @@ public final class Acknowledgment {
       public dsd.pubsub.protos.Acknowledgment.ack buildPartial() {
         dsd.pubsub.protos.Acknowledgment.ack result = new dsd.pubsub.protos.Acknowledgment.ack(this);
         result.senderType_ = senderType_;
-        result.seqNum_ = seqNum_;
+        result.num_ = num_;
         result.leadBrokerLocation_ = leadBrokerLocation_;
         result.data_ = data_;
         onBuilt();
@@ -584,8 +568,8 @@ public final class Acknowledgment {
           senderType_ = other.senderType_;
           onChanged();
         }
-        if (other.getSeqNum() != 0) {
-          setSeqNum(other.getSeqNum());
+        if (other.getNum() != 0) {
+          setNum(other.getNum());
         }
         if (!other.getLeadBrokerLocation().isEmpty()) {
           leadBrokerLocation_ = other.leadBrokerLocation_;
@@ -625,10 +609,6 @@ public final class Acknowledgment {
 
       private java.lang.Object senderType_ = "";
       /**
-       * <pre>
-       * broker or LB
-       * </pre>
-       *
        * <code>string senderType = 1;</code>
        * @return The senderType.
        */
@@ -645,10 +625,6 @@ public final class Acknowledgment {
         }
       }
       /**
-       * <pre>
-       * broker or LB
-       * </pre>
-       *
        * <code>string senderType = 1;</code>
        * @return The bytes for senderType.
        */
@@ -666,10 +642,6 @@ public final class Acknowledgment {
         }
       }
       /**
-       * <pre>
-       * broker or LB
-       * </pre>
-       *
        * <code>string senderType = 1;</code>
        * @param value The senderType to set.
        * @return This builder for chaining.
@@ -685,10 +657,6 @@ public final class Acknowledgment {
         return this;
       }
       /**
-       * <pre>
-       * broker or LB
-       * </pre>
-       *
        * <code>string senderType = 1;</code>
        * @return This builder for chaining.
        */
@@ -699,10 +667,6 @@ public final class Acknowledgment {
         return this;
       }
       /**
-       * <pre>
-       * broker or LB
-       * </pre>
-       *
        * <code>string senderType = 1;</code>
        * @param value The bytes for senderType to set.
        * @return This builder for chaining.
@@ -719,33 +683,33 @@ public final class Acknowledgment {
         return this;
       }
 
-      private int seqNum_ ;
+      private int num_ ;
       /**
-       * <code>int32 seqNum = 2;</code>
-       * @return The seqNum.
+       * <code>int32 num = 2;</code>
+       * @return The num.
        */
       @java.lang.Override
-      public int getSeqNum() {
-        return seqNum_;
+      public int getNum() {
+        return num_;
       }
       /**
-       * <code>int32 seqNum = 2;</code>
-       * @param value The seqNum to set.
+       * <code>int32 num = 2;</code>
+       * @param value The num to set.
        * @return This builder for chaining.
        */
-      public Builder setSeqNum(int value) {
+      public Builder setNum(int value) {
         
-        seqNum_ = value;
+        num_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>int32 seqNum = 2;</code>
+       * <code>int32 num = 2;</code>
        * @return This builder for chaining.
        */
-      public Builder clearSeqNum() {
+      public Builder clearNum() {
         
-        seqNum_ = 0;
+        num_ = 0;
         onChanged();
         return this;
       }
@@ -926,10 +890,10 @@ public final class Acknowledgment {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\033protos/acknowledgment.proto\"S\n\003ack\022\022\n\n" +
-      "senderType\030\001 \001(\t\022\016\n\006seqNum\030\002 \001(\005\022\032\n\022lead" +
-      "BrokerLocation\030\003 \001(\t\022\014\n\004data\030\004 \001(\014B#\n\021ds" +
-      "d.pubsub.protosB\016Acknowledgmentb\006proto3"
+      "\n\033protos/acknowledgment.proto\"P\n\003ack\022\022\n\n" +
+      "senderType\030\001 \001(\t\022\013\n\003num\030\002 \001(\005\022\032\n\022leadBro" +
+      "kerLocation\030\003 \001(\t\022\014\n\004data\030\004 \001(\014B#\n\021dsd.p" +
+      "ubsub.protosB\016Acknowledgmentb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -940,7 +904,7 @@ public final class Acknowledgment {
     internal_static_ack_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_ack_descriptor,
-        new java.lang.String[] { "SenderType", "SeqNum", "LeadBrokerLocation", "Data", });
+        new java.lang.String[] { "SenderType", "Num", "LeadBrokerLocation", "Data", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

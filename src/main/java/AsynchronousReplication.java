@@ -19,22 +19,29 @@ public class AsynchronousReplication implements Runnable{
     int peerID;
     Map<String, CopyOnWriteArrayList<ByteString>> topicMap;
     Connection conn;
+    boolean clear;
 
-    public AsynchronousReplication(MembershipTable membershipTable, byte[] buffer, int brokerID, HashMap<Integer, Connection> dataConnMap, int peerID, Map<String, CopyOnWriteArrayList<ByteString>> topicMap, Connection conn ) {
+    public AsynchronousReplication(MembershipTable membershipTable, byte[] buffer, int brokerID,
+                                   HashMap<Integer, Connection> dataConnMap, int peerID,
+                                   Map<String, CopyOnWriteArrayList<ByteString>> topicMap, Connection conn, boolean clear) {
         this.membershipTable = membershipTable;
         this.buffer = buffer;
         this.brokerID = brokerID;
         this.dataConnMap = dataConnMap;
-        //executor = Executors.newSingleThreadExecutor();
         executor = Executors.newFixedThreadPool(10);
         this.peerID = peerID;
         this.topicMap = topicMap;
         this.conn = conn;
+        this.clear = clear;
     }
 
     @Override
     public void run() {
         if (peerID != -1) { // for new broker catch up with data, send record by record
+            int num = 0;
+            if(clear){
+                num = 1;
+            }
             if(topicMap != null && topicMap.size() != 0 ) {
                 String topic;
                 ByteString data;
@@ -42,8 +49,6 @@ public class AsynchronousReplication implements Runnable{
                     topic = entry.getKey();
                     for(int i = 0; i < entry.getValue().size(); i++){
                         data = entry.getValue().get(i);
-                        System.out.println("topic: " + topic);
-
                         MessageInfo.Message record = MessageInfo.Message.newBuilder()
                                 .setTopic(topic)
                                 .setValue(data)
@@ -52,19 +57,19 @@ public class AsynchronousReplication implements Runnable{
                         Acknowledgment.ack catchupData = Acknowledgment.ack.newBuilder()
                                 .setSenderType("catchupData")
                                 .setData(ByteString.copyFrom(record.toByteArray()))
+                                .setNum(num)
                                 .build();
-
 
                         (dataConnMap.get(peerID)).send(catchupData.toByteArray()); // send data message
                         System.out.println("######## sending catch up data to " + peerID);
                     }
-
                 }
-            } else{
+            }
+            else{
                 System.out.println("####### nothing in my topic map yet");
             }
 
-        } else {
+        } else { // async replication
             Runnable replication = () -> {
                 for (int id : membershipTable.getKeys()) {
                     if (membershipTable.getMemberInfo(id).isAlive && id != brokerID) {
