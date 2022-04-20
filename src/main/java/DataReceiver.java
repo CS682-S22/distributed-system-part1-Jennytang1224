@@ -138,7 +138,7 @@ class DataReceiver implements Runnable {
                                 if(clear && clearCounter == 0){
                                     topicMap.clear();
                                     clearCounter++;
-                                    System.out.println("~~~ original data got removed");
+                                    System.out.println("\n\n\n~~~~~~~~~~~~ original data got removed");
                                 }
                                 Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, dataInBytes, topicMap, catchupDataCounter++, clear));
                                 th.start();

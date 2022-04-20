@@ -48,7 +48,7 @@ public class LeaderBasedReceiveProducerData implements Runnable{
                 topicMap.put(topic, newList);
             }
             messageCounter++;
-            System.out.println(" >>> data stored and number of data received: " + messageCounter + "\n");
+            System.out.println(" >>>>>>>>>>>>> data stored and number of data received: " + messageCounter + "\n");
 
 
 
