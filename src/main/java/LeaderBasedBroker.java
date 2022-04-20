@@ -271,7 +271,7 @@ public class LeaderBasedBroker {
                                     Thread rep = new Thread(synchronousReplication);
                                     rep.start();
                                     try { // to get tha ack count
-                                        Thread.sleep(1900);
+                                        Thread.sleep(2100);
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }
@@ -341,7 +341,7 @@ public class LeaderBasedBroker {
                                             .setType("heartbeat").setSenderID(brokerID).build();
                                     conn.send(heartBeatResponse.toByteArray());
                                     try {
-                                        Thread.sleep(300);
+                                        Thread.sleep(500);
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }
