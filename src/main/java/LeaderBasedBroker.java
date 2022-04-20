@@ -340,11 +340,11 @@ public class LeaderBasedBroker {
                                     Resp.Response heartBeatResponse = Resp.Response.newBuilder()
                                             .setType("heartbeat").setSenderID(brokerID).build();
                                     conn.send(heartBeatResponse.toByteArray());
-                                    try {
-                                        Thread.sleep(500);
-                                    } catch (InterruptedException e) {
-                                        e.printStackTrace();
-                                    }
+//                                    try {
+//                                        Thread.sleep(100);
+//                                    } catch (InterruptedException e) {
+//                                        e.printStackTrace();
+//                                    }
                                     System.out.println("(received and replying heart beat to: " + senderId + ")");
                                     if(!membershipTable.getMemberInfo(senderId).isAlive) {
                                        membershipTable.getMemberInfo(senderId).setAlive(true);

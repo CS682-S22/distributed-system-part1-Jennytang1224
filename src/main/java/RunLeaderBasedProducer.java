@@ -84,7 +84,7 @@ public class RunLeaderBasedProducer {
                             break;
                         } else {
                             leaderBasedProducerToBroker.send(record.toByteArray());
-                            System.out.println("An ACK received and a message has been send!");
+                            System.out.println("\nAn ACK received and a message has been send!\n");
                         }
                     }
                 }
