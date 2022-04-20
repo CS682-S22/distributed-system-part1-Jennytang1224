@@ -135,13 +135,12 @@ class DataReceiver implements Runnable {
                                 if(num == 0){
                                     clear = false;
                                 }
-                               // System.out.println("$$$$$$$$$$$$$$$$$$$ clear counter: " + clearCounter);
                                 if(clear && clearCounter == 0){
                                     topicMap.clear();
                                     clearCounter++;
                                     System.out.println("~~~ original data got removed");
                                 }
-                                Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, dataInBytes, topicMap, catchupDataCounter, clear));
+                                Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, dataInBytes, topicMap, catchupDataCounter++, clear));
                                 th.start();
                                 try {
                                     th.join();
@@ -173,7 +172,6 @@ class DataReceiver implements Runnable {
 
                             dataCounter++;
                             counter++;
-                            catchupDataCounter++;
                         }
                     }
                 }
