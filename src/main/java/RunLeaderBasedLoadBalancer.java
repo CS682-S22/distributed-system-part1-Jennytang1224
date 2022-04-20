@@ -6,22 +6,13 @@ import java.util.List;
  */
 public class RunLeaderBasedLoadBalancer {
     public static void main(String[] args){
-//        // 3 5 (3 broker and 5 partitions) brokerConfig
-//        if(!Utilities.validateArgsLoadBalancer(args)){
-//            System.exit(-1);
-//        }
-//
-//        int numOfBrokers = Integer.parseInt(args[0]);
-//        int numOfPartitions = Integer.parseInt(args[1]);
-//        String brokerConfigFile = args[2];
-
-//        List<Object> maps = Utilities.readConfig();
-//        IPMap ipMap = (IPMap) maps.get(0);
-//        PortMap portMap = (PortMap) maps.get(1);
-//        String LBHostName = Utilities.getHostName();
-
-        String LBHostName = "Jennys-MacBook-Pro.local";
-        int LBPort = 1430;
+        List<Object> maps = Utilities.readBrokerConfig();
+        IPMap ipMap = (IPMap) maps.get(0);
+        PortMap portMap = (PortMap) maps.get(1);
+        String LBHostName = Utilities.getHostName();
+        int LBPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(LBHostName)));
+//        String LBHostName = "Jennys-MacBook-Pro.local";
+//        int LBPort = 1430;
         LeaderBasedLoadBalancer loadBalancer = new LeaderBasedLoadBalancer(LBHostName, LBPort);
 
         try {

@@ -22,7 +22,7 @@ public class Utilities {
     static String InfoFileName = "files/InfoMap";
     static String offsetFilePath = "files/idMapOffset";
     private static String hostname;
-    private static String brokerConfigFile = "files/brokerConfig.json";
+    static String brokerConfigFile = "files/brokerConfig.json";
     static int numOfBrokersInSys = 5;
 
     /**
@@ -43,9 +43,9 @@ public class Utilities {
      * @return true if arguments are valid, false otherwise
      */
     public static boolean validateArgsConsumer(String[] args) {
-        //usage: topic startingPosition brokerConfig
+        //usage: brokerLocation topic startingPosition
         if(args.length == 0){
-            System.out.println("enter topic");
+            System.out.println("enter: brokerLocation topic startingPosition");
             return false;
         }
         else if (args.length > 3){
@@ -85,9 +85,17 @@ public class Utilities {
      * @return true if arguments are valid, false otherwise
      */
     public static boolean validateArgsBroker(String[] args) {
-        //usage: brokerConfig
+        //usage: synchronous failure
         if(args.length == 0){
-            System.out.println("enter broker config file");
+            System.out.println("enter boolean value for synchronous and failure");
+            return false;
+        }
+        else if(args.length == 1){
+            System.out.println("missing an argument");
+            return false;
+        }
+        else if(args.length > 2){
+            System.out.println("too many arguments: expecting 2 arguments");
             return false;
         }
         return true;
@@ -100,17 +108,9 @@ public class Utilities {
      * @return true if arguments are valid, false otherwise
      */
     public static boolean validateArgsLoadBalancer(String[] args) {
-        //3 5 (3 broker and 5 partitions) brokerConfig
-        if(args.length == 0){
-            System.out.println("enter number of broker and partition");
-            return false;
-        }
-        else if (args.length < 3){
-            System.out.println("missing another argument");
-            return false;
-        }
-        else if (args.length > 3){
-            System.out.println("invalid number of arguments");
+        // no argument
+        if(args.length > 0){
+            System.out.println("expecting no argument for load balancer");
             return false;
         }
         return true;
@@ -168,7 +168,7 @@ public class Utilities {
      * read config for host name and port
      * @return an object contains maps
      */
-    public static List<Object> readBrokerConfig(String BrokerConfigFileName){
+    public static List<Object> readBrokerConfig(){
         IPMap ipMap = new IPMap();
         PortMap portMap = new PortMap();
         HostInfo hostInfo;
@@ -176,7 +176,7 @@ public class Utilities {
         // read config.json to hostMap
         Gson gson = new Gson();
         String line;
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(BrokerConfigFileName), StandardCharsets.ISO_8859_1))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(brokerConfigFile), StandardCharsets.ISO_8859_1))) {
             while ((line = br.readLine()) != null) {
                 if ((!line.equals(""))) {
                     try { //skip bad line
@@ -393,21 +393,21 @@ public class Utilities {
 
 
     public static String getHostnameByID(int id){
-        List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
+        List<Object> maps = Utilities.readBrokerConfig();
         IPMap ipMap = (IPMap) maps.get(0);
         String peerHostName = ipMap.getIpById(String.valueOf(id));
         return peerHostName;
     }
 
     public static int getPortByID(int id){
-        List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
+        List<Object> maps = Utilities.readBrokerConfig();
         PortMap portMap = (PortMap) maps.get(1);
         int peerPort = Integer.parseInt(portMap.getPortById(String.valueOf(id)));
         return peerPort;
     }
 
     public static int getPortRepByID(int id){
-        List<Object> maps = Utilities.readBrokerConfig(brokerConfigFile);
+        List<Object> maps = Utilities.readBrokerConfig();
         PortMap portMap = (PortMap) maps.get(1);
         int peerPort = Integer.parseInt(portMap.getPortRepById(String.valueOf(id)));
         return peerPort;

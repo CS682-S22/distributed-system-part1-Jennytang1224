@@ -9,16 +9,9 @@ public class RunLeaderBasedConsumer {
 
     public static void main(String[] args) throws IOException {
         //usage: brokerLocation topic startingPosition
-        //   check argument length
-        if(args.length == 0){
-            System.out.println("enter topic");
-            return;
+        if(!Utilities.validateArgsConsumer(args)){
+            System.exit(-1);
         }
-        else if (args.length > 3){
-            System.out.println("invalid number of arguments");
-            return;
-        }
-
         String LBLocation = args[0];
         String topic = args[1];
         int startingPosition = Integer.parseInt(args[2]);
