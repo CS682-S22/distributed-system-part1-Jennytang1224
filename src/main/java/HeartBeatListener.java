@@ -76,7 +76,7 @@ public class HeartBeatListener implements Runnable {
                     Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
                     conn.send(heartBeatMessage.toByteArray());
                 }
-                else if(inElection){// if its election response
+                else if(inElection) {// if its election response
                     int senderId = f.getSenderID();
                     int newLeader = f.getWinnerID();
                     if (newLeader == -1) {// if winner is -1 ... its a simple election response, still in election
@@ -85,10 +85,22 @@ public class HeartBeatListener implements Runnable {
                         System.out.println("now waiting for election decision from other broker");
                         inElection = true;
                         sending = false;
-                    }else{
+                    } else { // if winner is not -1 ... we have a winner
+                        System.out.println("~~~~~~~~~ NEW LEADER HAS BEEN ELECTED!!! ID: " + newLeader + "~~~~~~~~");
+                        // int oldLeader = membershipTable.getLeaderID();
+                        int oldLeader = currentLeaderBeforeMarkDead;
+                        System.out.println("old leader id:" + oldLeader);
+                        if (oldLeader != -1) { // there's a leader
+                            membershipTable.switchLeaderShip(oldLeader, newLeader);//update new leader
+                        } else {
+                            System.out.println("weird ... no current leader right now");
+                        }
 
+                        System.out.println("election ended");
+                        Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
+                        conn.send(heartBeatMessage.toByteArray());
+                        inElection = false; // election ended on my end
                     }
-
                 }
 
             } else { // if no response within timeout
