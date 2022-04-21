@@ -1,5 +1,4 @@
 import dsd.pubsub.protos.Resp;
-import dsd.pubsub.protos.Response;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -62,7 +61,6 @@ public class HeartBeatListener implements Runnable {
             // if there's response within timeout
             if (f != null) {
                 //check if f is heartbeat or election message
-                //System.out.println("type in listener: " + f.getType());
                 if (f.getType().equals("heartbeat")) {
                     inElection = false;
                 } else if (f.getType().equals("election")) {
@@ -75,44 +73,18 @@ public class HeartBeatListener implements Runnable {
                     replyingBrokerId = f.getSenderID();
                     System.out.println("(received and replying heart beat to: " + replyingBrokerId + ")");
                     membershipTable.getMemberInfo(replyingBrokerId).setAlive(true);
-
                     Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
                     conn.send(heartBeatMessage.toByteArray());
-//                    try { // speed of heartbeat
-//                        Thread.sleep(500);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-
                 }
                 else if(inElection){// if its election response
                     int senderId = f.getSenderID();
                     int newLeader = f.getWinnerID();
-
                     if (newLeader == -1) {// if winner is -1 ... its a simple election response, still in election
                         System.out.println(" *** In Election, receiving election response from the lower id broker " + senderId);
                         // me can stop election Bc there's someone more qualified than me to be the leader
                         System.out.println("now waiting for election decision from other broker");
                         inElection = true;
                         sending = false;
-
-                    } else { // if winner is not -1 ... we have a winner
-                        System.out.println("~~~~~~~~~ NEW LEADER HAS BEEN ELECTED!!! ID: " + newLeader + "~~~~~~~~");
-                        // int oldLeader = membershipTable.getLeaderID();
-                        int oldLeader = currentLeaderBeforeMarkDead;
-                        System.out.println("old leader id:" + oldLeader);
-                        if (oldLeader != -1) { // there's a leader
-                            membershipTable.switchLeaderShip(oldLeader, newLeader);//update new leader
-                        } else {
-                            System.out.println("weird ... no current leader right now");
-                        }
-
-                        System.out.println("election ended");
-                        Resp.Response heartBeatMessage = Resp.Response.newBuilder().setType("heartbeat").setSenderID(brokerID).build();
-                        conn.send(heartBeatMessage.toByteArray());
-                        inElection = false; // election ended on my end
-
-
                     }
                 }
 
@@ -123,10 +95,5 @@ public class HeartBeatListener implements Runnable {
                 currentLeaderBeforeMarkDead = failureDetector.getCurrentLeaderBeforeMarkDead();
             }
         }
-
-        // else if within num of retires, send same heart beat again, go back to while loop
-
     }
-
-
 }

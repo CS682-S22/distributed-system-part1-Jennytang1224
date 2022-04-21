@@ -1,6 +1,4 @@
 import dsd.pubsub.protos.Resp;
-
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -14,7 +12,6 @@ public class BullyElection {
     Connection conn;
     int winnerId = -1;
     int peerCounter = 0; // # of peers you send election msg to
-
 
     public BullyElection(int brokerId, MembershipTable membershipTable, HashMap<Integer, Connection> connMap, Connection conn) {
         this.brokerId = brokerId;
@@ -41,7 +38,6 @@ public class BullyElection {
 
             if ((membershipTable.membershipTable.containsKey(peerID)) && (membershipTable.getMemberInfo(peerID).isAlive) && (peerID < brokerId)) {
                 //get connection between this broker and the other broker
-          //  if ((membershipTable.getMemberInfo(peerID).isAlive)
                 System.out.println("-> > > sent election message to " + peerID);
                 Connection conn = connMap.get(peerID);
 

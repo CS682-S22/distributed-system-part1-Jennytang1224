@@ -1,5 +1,4 @@
 import dsd.pubsub.protos.Acknowledgment;
-import dsd.pubsub.protos.MessageInfo;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
@@ -39,7 +38,6 @@ public class RunLeaderBasedApplication implements Runnable {
                 } catch (InvalidProtocolBufferException e) {
                     e.printStackTrace();
                 }
-           //    byte[] arr = d.getData().toByteArray();
                 byte[] arr = d.getData().toString(StandardCharsets.ISO_8859_1).getBytes(StandardCharsets.ISO_8859_1);
 
                 try {

@@ -1,5 +1,4 @@
 import dsd.pubsub.protos.Resp;
-import dsd.pubsub.protos.Response;
 
 import java.util.HashMap;
 
@@ -36,7 +35,6 @@ public class FailureDetector {
         currentLeader = membershipTable.getLeaderID();
         if(!inElection){ //if expecting heartbeat, but nothing
             System.out.println("exceed timeout, assume peer: " + peerID + " is dead ");
-
             if (membershipTable.getMemberInfo(peerID).isLeader) { // leader is dead
                 //if peerid is leader, bully (send initial election msg and wait for election response)
                 membershipTable.print();
@@ -47,52 +45,40 @@ public class FailureDetector {
                 inElection = true;
             } else { // if peerid is follower, update table  - mark dead
                 membershipTable.markDead(peerID);
-
                 //if this broker is leader, send table to load balancer
                 if(membershipTable.getMemberInfo(brokerID).isLeader){
                     //send table to LB
                     Utilities.sendMembershipTableUpdates(connMap.get(0), "updateAlive", brokerID, peerID,
                             "", 0, "", membershipTable.getMemberInfo(peerID).isLeader, false);
-                    //membershipTable.print();
                 }
                 inElection = false;
             }
-           // synchronized (this) {
-                System.out.println("~~~~~~~~~~~~~~~~~~table after detecting broker " + peerID + " failed to return heartbeat msg");
-                membershipTable.print();
-                System.out.println(" ");
-                listening = false;
-           // }
-
+            System.out.println("~~~~~~~~~~~~~~~~~~table after detecting broker " + peerID + " failed to return heartbeat msg");
+            membershipTable.print();
+            System.out.println(" ");
+            listening = false;
         }
 
         else{ // if expecting election msg, but nothing
             //System.out.println("... is expecting election msg, but nothing");
-           // if(!membershipTable.getMemberInfo(peerID).isLeader) {
-
-                membershipTable.markDead(peerID); // mark the peer is dead
-           // }
-
+            membershipTable.markDead(peerID); // mark the peer is dead
             //if this broker is leader, send table to load balancer
             if(membershipTable.getMemberInfo(brokerID).isLeader){
                 //send table to LB
                 Utilities.sendMembershipTableUpdates(connMap.get(0), "updateAlive", brokerID, peerID,
                         "", 0, "", membershipTable.getMemberInfo(peerID).isLeader, false);
-                membershipTable.print();
             }
 
             //   in the table, check if there's any lower id broker than me is alive, if not, im the leader
             for (int i = 1; i <= connMap.size(); i++) {
-                // int olderLeader = membershipTable.getLeaderID();
                 if ((membershipTable.membershipTable.containsKey(i)) && (membershipTable.getMemberInfo(i).isAlive) && (i < brokerID)) {
                     // there exists a more qualified broker than me to be the leader
-                   // System.out.println("im out..waiting for leader announcement from other broker..");
+                    //System.out.println("im out..waiting for leader announcement from other broker..");
                     isThereLowerIDBroker = true;
                     inElection = true;
                     break;
                 }
             }
-
             if(!isThereLowerIDBroker) { // if no such broker exists, im the new leader!
                 announceNewLeadership();
                 inElection = false;
@@ -104,7 +90,6 @@ public class FailureDetector {
         System.out.println("!!!!!! update table and announce im the new leader");
         //update my table, make self as the leader
         membershipTable.switchLeaderShip(currentLeader, brokerID);
-
         // notify everyone im the new leader
         winnerId = brokerID;
         for (int peerID : connMap.keySet()) {

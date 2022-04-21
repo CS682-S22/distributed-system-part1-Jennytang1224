@@ -1,7 +1,6 @@
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.Acknowledgment;
-import dsd.pubsub.protos.BrokerToLoadBalancer;
 import dsd.pubsub.protos.MessageInfo;
 
 import java.util.Map;
@@ -12,7 +11,6 @@ public class LeaderBasedSendConsumerData implements Runnable{
     byte[] recordBytes;
     Map<String, CopyOnWriteArrayList<ByteString>> topicMap;// <topic1: topic1_list, topic2: topic2_list>
     int startingPosition;
-    int newStartingPosition;
 
     public LeaderBasedSendConsumerData(Connection connection, byte[] recordBytes,  Map<String, CopyOnWriteArrayList<ByteString>> topicMap ){
         this.connection = connection;
@@ -55,7 +53,6 @@ public class LeaderBasedSendConsumerData implements Runnable{
                             .setData(singleRecord)
                             .build();
                     connection.send(data.toByteArray());
-                    // connection.send(singleRecord);
                     System.out.println("A record has been sent to the Consumer, count: " + count++);
                 }
             }

@@ -10,7 +10,6 @@ public class Connection {
     private Socket socket;
     private DataInputStream input;
     private DataOutputStream output;
-    private int receiverCounter = 0;
     private boolean alive;
 
     public Connection(String hostName, int port, boolean alive){
@@ -30,7 +29,6 @@ public class Connection {
             }else{
                 this.alive = true;
             }
-
         }
     }
 
@@ -69,7 +67,6 @@ public class Connection {
             }
         } catch (EOFException ignored) {} //No more content available to read
         catch (IOException exception) {
-
            // System.err.printf(" Fail to receive message ");
         }
 

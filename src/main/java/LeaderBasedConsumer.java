@@ -2,11 +2,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.Acknowledgment;
 import dsd.pubsub.protos.MessageInfo;
 import dsd.pubsub.protos.PeerInfo;
-
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,10 +19,6 @@ public class LeaderBasedConsumer {
     private DataOutputStream output;
     private Connection connection;
     private static String outputPath;
-    static Server server;
-    static int peerPort;
-    static String peerHostName;
-    static int receiverCounter = 0;
     Receiver newReceiver;
     public CS601BlockingQueue<Acknowledgment.ack> bq;
     static String leadBrokerLocation;
@@ -161,7 +154,6 @@ public class LeaderBasedConsumer {
 
                     } else if (response.getSenderType().equals("leadBroker")) { // ack on data
                         Runnable add = () -> {
-                          //  byte[] result = conn.receive();
                             if (buffer != null) {
                                 try {
                                     this.bq.put(Acknowledgment.ack.parseFrom(buffer));
@@ -171,10 +163,8 @@ public class LeaderBasedConsumer {
                                     e.printStackTrace();
                                 }
                             }
-                            else{
-                            }
-                        };
 
+                        };
                         executor.execute(add);
                     }
                 }

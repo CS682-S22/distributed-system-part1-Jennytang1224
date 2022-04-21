@@ -5,7 +5,6 @@ public class MembershipTable {
     MemberInfo memberInfo;
     ConcurrentHashMap<Integer, MemberInfo> membershipTable = new ConcurrentHashMap<>();
 
-
     public int getId() {
         return id;
     }
@@ -13,7 +12,6 @@ public class MembershipTable {
     public void setId(int id) {
         this.id = id;
     }
-
 
     // add a new broker to the table
     public void put(int id, MemberInfo memberInfo){
@@ -23,7 +21,6 @@ public class MembershipTable {
         }else{
             membershipTable.put(id, memberInfo);
         }
-
     }
 
     public ConcurrentHashMap.KeySetView<Integer, MemberInfo> getKeys(){
@@ -84,8 +81,6 @@ public class MembershipTable {
                             + " " + memberInfo.getPort()
                             + " " + memberInfo.isLeader
                             + " " + memberInfo.isAlive) ;
-
         }
-
     }
 }

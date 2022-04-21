@@ -18,8 +18,6 @@ public class RunLeaderBasedProducer {
 
         String LBLocation = args[0];
         String filepath  = args[1];
-//        String LBLocation = "Jennys-MacBook-Pro.local:1430";
-//        String filepath = "files/10_records.log";
 
         boolean receivedAck;
         LeaderBasedProducer leaderBasedProducer = new LeaderBasedProducer(LBLocation);
@@ -67,7 +65,7 @@ public class RunLeaderBasedProducer {
                                 .build();
 
                         try { // CHECK ACK within timeout
-                            Thread.sleep(1800); // drop this num will cause not receiving ack on time
+                            Thread.sleep(2500); // drop this num will cause not receiving ack on time
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }

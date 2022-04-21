@@ -1,9 +1,6 @@
 import com.google.protobuf.ByteString;
 import dsd.pubsub.protos.Acknowledgment;
 import dsd.pubsub.protos.MessageInfo;
-import dsd.pubsub.protos.Resp;
-
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -82,9 +79,7 @@ public class AsynchronousReplication implements Runnable{
                     }
                 }
             };
-            //    synchronized (this) {
             executor.execute(replication);
-            //   }
         }
     }
 

@@ -1,11 +1,7 @@
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import dsd.pubsub.protos.Acknowledgment;
-import dsd.pubsub.protos.MessageInfo;
 import dsd.pubsub.protos.PeerInfo;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -32,8 +28,6 @@ class DataReceiver implements Runnable {
     static Map<String, CopyOnWriteArrayList<ByteString>> topicMap;
     int dataCounter;
     MembershipTable membershipTable;
-    Connection newBrokerConn;
-    boolean newBrokerDataRequest;
     int catchupDataCounter = 0;
     static int clearCounter;
 
@@ -69,22 +63,19 @@ class DataReceiver implements Runnable {
                     } catch (InvalidProtocolBufferException e) {
                         e.printStackTrace();
                     }
-
                     type = p.getType(); // consumer or producer
                     System.out.println("\n *** New Data Connection coming in ***");
                     System.out.println("Peer type: " + type);
                     peerHostName = p.getHostName();
                     peerPort = p.getPortNumber();
-                    peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), "files/brokerConfig.json");
-                    //   System.out.println("~~~~~~~    " + peerHostName + ":" + peerPort + " " + peerID );
+                    peerID = Utilities.getBrokerIDFromFile(peerHostName, String.valueOf(peerPort), Utilities.brokerConfigFile);
                     if (type.equals("broker")) { // other brokers
                         System.out.println("this broker on data port has connected to BROKER " + peerHostName + ":" + peerPort + "\n");
                         counter++;
                     }
 
-                } else { // when receiving leader data
+                } else { // when receiving data from leader
                     if (type.equals("broker")) { //leader sending data copy
-
                         try{
                             m = Acknowledgment.ack.parseFrom(buffer);
                         } catch (InvalidProtocolBufferException e) {
@@ -92,7 +83,6 @@ class DataReceiver implements Runnable {
                         }
                         if ( m != null) {
                             if(m.getSenderType().equals("data")){
-                                //newBrokerDataRequest = false;
                                 System.out.println("\n >>> Follower " + brokerID + " received data replication !!!");
                                 if(synchronous) {
                                     //send ack back to leader:
@@ -102,7 +92,6 @@ class DataReceiver implements Runnable {
                                     dataConnMap.get(membershipTable.getLeaderID()).send(ack.toByteArray());
                                     System.out.println(" >>> sent ack back to the lead broker!!!!!!");
                                 }
-
                                 //store data
                                 ByteString dataInBytes = m.getData();
                                 Thread th = new Thread(new LeaderBasedReceiveProducerData(conn, dataInBytes, topicMap, dataCounter, false));
@@ -112,11 +101,10 @@ class DataReceiver implements Runnable {
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
-
-                            } else if(m.getSenderType().equals("ack")){ //only lead broker will receive ack
+                            }
+                            else if(m.getSenderType().equals("ack")){ //only lead broker will receive ack
                                 System.out.println("~~~~~~~~~AN ACK received ");
                                 ackCount.getAndIncrement();
-
                             }
                             else if(m.getSenderType().equals("catchup")) { // new broker join and wants to catchup on data
                                 int peerId = Integer.parseInt(m.getLeadBrokerLocation());
@@ -127,7 +115,6 @@ class DataReceiver implements Runnable {
                                 rep.start();
                             }
                             else if(m.getSenderType().equals("catchupData")){
-                               // System.out.println("########## receive and store catchup data");
                                 //store data
                                 ByteString dataInBytes = m.getData();
                                 int num = m.getNum();
@@ -167,9 +154,7 @@ class DataReceiver implements Runnable {
                                     Thread rep = new Thread(asynchronousReplication);
                                     rep.start();
                                 }
-
                             }
-
                             dataCounter++;
                             counter++;
                         }

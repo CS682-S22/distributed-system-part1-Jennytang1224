@@ -5,7 +5,6 @@ import java.io.*;
 import java.net.Socket;
 import java.util.List;
 
-//producer send data to broker
 public class LeaderBasedProducer {
     private String brokerLocation;
     private int brokerPort;
@@ -14,12 +13,10 @@ public class LeaderBasedProducer {
     private DataInputStream input;
     private DataOutputStream output;
     private Connection connection;
-    Server server;
     String peerHostName;
     int peerPort;
     static String leadBrokerLocation;
     Receiver newReceiver;
-    static boolean receivedAck = false;
 
     public LeaderBasedProducer(String BrokerLocation) {
         this.brokerLocation = BrokerLocation;
@@ -33,8 +30,8 @@ public class LeaderBasedProducer {
         IPMap ipMap = (IPMap) maps.get(0);
         PortMap portMap = (PortMap) maps.get(1);
         peerHostName = Utilities.getHostName();
-        //peerPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(peerHostName)));
-        peerPort = 1412;
+        peerPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(peerHostName)));
+
 
         try {
             this.socket = new Socket(this.brokerHostName, this.brokerPort);
@@ -60,10 +57,7 @@ public class LeaderBasedProducer {
         newReceiver = new Receiver(peerHostName, peerPort, this.connection);
         Thread serverReceiver = new Thread(newReceiver);
         serverReceiver.start();
-
     }
-
-
 
 
     public String getLeadBrokerLocation(){
@@ -81,8 +75,6 @@ public class LeaderBasedProducer {
         private int port;
         private Connection conn;
         boolean receiving = true;
-        int counter = 0;
-        String type;
         boolean receivedAck = false;
 
         public Receiver(String name, int port, Connection conn) {
@@ -91,7 +83,6 @@ public class LeaderBasedProducer {
             this.conn = conn;
         }
 
-
         @Override
         public void run() {
             Acknowledgment.ack response = null;
@@ -99,8 +90,7 @@ public class LeaderBasedProducer {
 
                 byte[] buffer = conn.receive();
                 if (buffer == null || buffer.length == 0) {
-                    //receivedAck = false;
-                    // System.out.println("nothing received/ finished receiving");
+
                 } else {// Receive from LB
                     try {
                         response = Acknowledgment.ack.parseFrom(buffer);
