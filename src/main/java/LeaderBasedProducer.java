@@ -33,8 +33,8 @@ public class LeaderBasedProducer {
         IPMap ipMap = (IPMap) maps.get(0);
         PortMap portMap = (PortMap) maps.get(1);
         peerHostName = Utilities.getHostName();
-        peerPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(peerHostName)));
-        //peerPort = 1412;
+        //peerPort = Integer.parseInt(portMap.getPortById(ipMap.getIdByIP(peerHostName)));
+        peerPort = 1412;
 
         try {
             this.socket = new Socket(this.brokerHostName, this.brokerPort);
