@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 public class HeartBeatListener implements Runnable {
     Connection conn;
     MembershipTable membershipTable;
-    private CS601BlockingQueue<Resp.Response> bq;
+    CS601BlockingQueue<Resp.Response> bq;
     private ExecutorService executor;
     int delay = 400;
     int retires = 3;
