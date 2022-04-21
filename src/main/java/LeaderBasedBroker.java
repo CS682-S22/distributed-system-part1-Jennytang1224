@@ -226,7 +226,7 @@ public class LeaderBasedBroker {
                                     Thread rep = new Thread(synchronousReplication);
                                     rep.start();
                                     try { // to get tha ack count
-                                        Thread.sleep(2300);
+                                        Thread.sleep(2000);
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }
