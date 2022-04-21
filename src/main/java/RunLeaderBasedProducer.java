@@ -67,7 +67,7 @@ public class RunLeaderBasedProducer {
                                 .build();
 
                         try { // CHECK ACK within timeout
-                            Thread.sleep(2500); // drop this num will cause not receiving ack on time
+                            Thread.sleep(1800); // drop this num will cause not receiving ack on time
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
