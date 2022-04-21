@@ -85,7 +85,10 @@ public class HeartBeatListener implements Runnable {
                         System.out.println("now waiting for election decision from other broker");
                         inElection = true;
                         sending = false;
+                    }else{
+
                     }
+
                 }
 
             } else { // if no response within timeout

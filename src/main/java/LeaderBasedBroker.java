@@ -172,7 +172,8 @@ public class LeaderBasedBroker {
                                 Connection regularConnection = new Connection(peerHostName, peerPort, true);
                                 System.out.println("made data connection with peer: " + peerHostName + ":" + peerDataPort);
                                 System.out.println("made connection with peer: " + peerHostName + ":" + peerPort);
-
+                                dataConnMap.put(peerID, dataConnection); // add connection to map, {5:conn5, 4:conn4, 3:conn3}
+                                connMap.put(peerID, regularConnection);
                                 try {
                                     Thread.sleep(2000);
                                 } catch (InterruptedException e) {
@@ -188,8 +189,7 @@ public class LeaderBasedBroker {
 
                                 dataConnection.send(peerInfo.toByteArray());
                                 regularConnection.send(peerInfo.toByteArray());
-                                dataConnMap.put(peerID, dataConnection); // add connection to map, {5:conn5, 4:conn4, 3:conn3}
-                                connMap.put(peerID, regularConnection);
+
                             }
                         }
                         else if (type.equals("consumer")) { // hear from producer/LB only bc this broker is a leader
