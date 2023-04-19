@@ -2,6 +2,8 @@
 
 For this project, I implemented a distributed publish/subscribe system similar to the original Kafka design.
 
+You can find part 2 here: https://github.com/CS682-S22/distributed-system-part2-Jennytang1224
+
 ## **Producer**
 
 Implemented a `Producer` API that may be used by an application running on any host  that publishes messages to a broker. The `Producer` allows the application to do the following:
